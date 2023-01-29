@@ -53,4 +53,14 @@ done < <(cat "$LOF" | grep "\.sha1$")
 sha1sum -b "$LOF" >> "$SOF"
 sha1sum -b "$LSR" >> "$SOF"
 
-echo "Number of lines in $SOF: "$(wc -l "$SOF")
+echo
+echo
+echo
+echo "All done, stats:"
+echo
+echo
+echo "Number of lines in $SOF (all checksums, might contain duplicates): "$(wc -l "$SOF")
+echo "Number of lines in $LSR (recursive directory list): "$(wc -l "$LSR")
+echo "Number of lines in $LOF (all files listed): "$(wc -l "$LOF")
+echo
+echo
