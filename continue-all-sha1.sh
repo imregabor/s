@@ -34,6 +34,7 @@ else
   echo "  line count: "$(wc -l "$FL")
 fi
 
+
 if [ -f "$OF_INPROGRESS" ] ; then
   echo "$OF_INPROGRESS exists; extract file names for already generated sums"
   echo "  already checksummed files: "$(wc -l $OF_INPROGRESS)
@@ -41,6 +42,7 @@ if [ -f "$OF_INPROGRESS" ] ; then
   comm -23 "$FL" "$FL_DONE" > "$FL_TODO"
 else
   echo "$OF / $OF_INPROGRESS missing, do checksum calculation on all listed files"
+  touch "$FL_DONE"
   cp "$FL" "$FL_TODO"
 fi
 
