@@ -13,4 +13,4 @@ while read line ; do
   echo "$STAT $line"
 
 
-done < <( find -type d -maxdepth 1 -mindepth 1)
+done < <( find -maxdepth 1 -mindepth 1 -type d)
