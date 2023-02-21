@@ -113,10 +113,12 @@ if [ "$SHA1" == true ]; then
   COS=$(comm -23 <(echo "$CS" | cut -f 1 -d " " | sort)  <(echo "$TS" | cut -f 1 -d " " | sort))
 
   if [ -z "$COS" ] ; then
-    echo "No unique candiate checksum found"
+    echo "No unique candiate checksums found"
   else
-    echo "Unique candidate checksums (found "$(wc -l < <(echo "$COS"))" files)"
+    echo "Unique candidate based on checksum (found "$(wc -l < <(echo "$COS"))" files)"
     echo
-    echo "$COS"
+    while read s ; do
+      grep "^$s" <(echo "$CS")
+    done < <( echo "$COS")
   fi
 fi
