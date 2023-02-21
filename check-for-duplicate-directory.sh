@@ -2,7 +2,7 @@
 #
 
 CANDIDATE=""
-TARGET=""
+TARGETS=()
 NAME=false
 SHA1=false
 
@@ -12,7 +12,7 @@ function usage() {
   echo
   echo "usage:"
   echo
-  echo "  $0 [-name] [-sha1] -candidate <DIR> -target <DIR>"
+  echo "  $0 [-name] [-sha1] -candidate <DIR> -target <DIR> [-target <DIR>]"
   echo
 
 
@@ -28,7 +28,8 @@ while [ $# -gt 0 ]; do
       ;;
     -target)
       shift
-      TARGET=$(readlink -m "$1")
+      D=$(readlink -m "$1")
+      TARGETS+=( "$D" )
       shift
       ;;
     -name)
@@ -50,9 +51,15 @@ if [ ! -d "$CANDIDATE" ] ; then
   usage "candidate dir not found: $CANDIDATE"
 fi
 
-if [ ! -d "$TARGET" ] ; then
-  usage "target dir not found: $TARGET"
+if [ "${#TARGETS[@]}" -eq 0 ] ; then
+  usage "no target dir(s) given"
 fi
+
+for i in "${TARGETS[@]}"; do
+  if [ ! -d "$i" ] ; then
+    usage "target dir not found: $i"
+  fi
+done
 
 if [ "$NAME" == false ] && [ "$SHA1" == false ] ; then
   usage "no checks selected"
@@ -73,7 +80,7 @@ if [ "$NAME" == true ] ; then
   echo
 
   echo "Listing base names for target directory"
-  TN=$(find "$TARGET" -type f | sed -e 's/.*\///' | sort -u)
+  TN=$(find "${TARGETS[@]}" -type f | sed -e 's/.*\///' | sort -u)
   UTN=$(echo "$TN" | sort -u)
   echo " done."
   echo " File count:        "$(wc -l < <(echo "$TN"))
@@ -104,7 +111,7 @@ if [ "$SHA1" == true ]; then
   echo
 
   echo "Calculate SHA1 checksums for for target files"
-  TS=$(find "$TARGET" -type f | xargs -I '{}' sha1sum -b '{}')
+  TS=$(find "${TARGETS[@]}" -type f | xargs -I '{}' sha1sum -b '{}')
   echo "  done."
   echo "  File count: "$(wc -l < <(echo "$TS"))
   echo
