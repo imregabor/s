@@ -4,8 +4,8 @@
 #
 #
 
-OF_INPROGRESS="./all.sha1"
-OF="./all.sha1-inprogress"
+OF="./all.sha1"
+OF_INPROGRESS="./all.sha1-inprogress"
 
 if [ ! -z "$1" ] ; then
   OF=$(readlink -m "$OF")
@@ -13,6 +13,8 @@ if [ ! -z "$1" ] ; then
   echo "Will cd to \"$1\" for file listing"
   echo "  OF: \"$OF\""
   echo "  OF_INPROGRESS: \"$OF_INPROGRESS\""
+  echo
+  echo
   cd "$1"
 fi
 
@@ -42,4 +44,8 @@ done < <(find . -type f | grep -v "$OF_INPROGRESS")
 echo "  rename $OF_INPROGRESS to $OF"
 mv "$OF_INPROGRESS" "$OF"
 
+echo
+echo
 echo "All done; total file count: $CT."
+echo
+echo
