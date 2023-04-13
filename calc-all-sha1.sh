@@ -7,6 +7,15 @@
 OF_INPROGRESS="./all.sha1"
 OF="./all.sha1-inprogress"
 
+if [ ! -z "$1" ] ; then
+  OF=$(readlink -m "$OF")
+  OF_INPROGRESS=$(readlink -m "$OF_INPROGRESS")
+  echo "Will cd to \"$1\" for file listing"
+  echo "  OF: \"$OF\""
+  echo "  OF_INPROGRESS: \"$OF_INPROGRESS\""
+  cd "$1"
+fi
+
 if [ -f "$OF_INPROGRESS" ] ; then
   echo "$OF_INPROGRESS exists; exiting."
   exit -1
