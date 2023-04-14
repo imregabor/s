@@ -34,7 +34,7 @@ while read line ; do
   fi
   if echo "$line" | grep -q '[jJ][pP][eE]\?[gG]$' ; then
     EI=$(identify \
-      -format '%[exif:make]|%[exif:model]|%[exif:datetime]|%[exif:focallength] mm %[exif:exposuretime] s f %[exif:fnumber] ISO %[exif:photographicsensitivity]' \
+      -format '%[exif:make]|%[exif:model]|%[exif:datetimedigitized]|%[exif:focallength] mm %[exif:exposuretime] s f %[exif:fnumber] ISO %[exif:photographicsensitivity]' \
       "$line" 2>&1 | sed -e 's/ *|/|/g')
     TRB=""
     if echo "$EI" | grep -q "unknown image property" ; then
