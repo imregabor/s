@@ -4,32 +4,88 @@
 #
 #
 
+
+usage() {
+  echo
+  echo "Usage: $0 [-l <FILENAME>] [-b <BASENAME>] [-h]"
+  echo "  -l <FILENAME>   Use list file"
+  echo "  -b <FILENAME>   Basename for work generated files"
+  echo "  -h              Help"
+  echo
+  exit -1
+}
+
+
+BN="all"
+LOF=""
+
+while getopts "l:b:h" opt; do
+  case ${opt} in
+    l )
+      LOF=${OPTARG}
+      if [ ! -f "$LOF" ] ; then
+        echo "ERROR! Listing file \"$LOF\" not found"
+        exit -1
+      fi
+      ;;
+    b )
+      BN=${OPTARG}
+      ;;
+    h )
+      usage
+      ;;
+    \? )
+      echo "Invalid option: -$OPTARG" 1>&2
+      usage
+      ;;
+    : )
+      echo "Option -$OPTARG requires an argument" 1>&2
+      usage
+      ;;
+  esac
+done
+
+
+# Time stamp
 TS=$(date -Iseconds)
-OF="./all-${TS}.exifinfo"
-TO="./all-${TS}.troubles"
-LOF="./all-${TS}.filelist"
 
-echo "Create full file list to $LOF"
+# Main out file
+OF="./${BN}-${TS}.exifinfo"
+
+# Troubles file
+TO="./${BN}-${TS}.troubles"
+
+if [ -z "${LOF}" ] ; then
+  # List of files
+  LOF="./${BN}-${TS}.filelist"
+
+
+  echo "Create full file list to $LOF"
+  echo
+
+  CT=0
+  while read line ; do
+    CT=$(( CT + 1 ))
+    if [ $(( CT % 1000 )) == 0 ] ; then
+      echo "  listed $CT files so far"
+    fi
+  done < <(find . -type f | grep -v "^\./\$RECYCLE.BIN" | grep -v "^\./System Volume Information" | grep '[jJ][pP][eE]\?[gG]$\|[mM][pP]4$\|[mM][oO][vV]$\|[aA][vV][iI]$' | tee "$LOF" )
+  echo "  listing done; listed file count: $CT."
+else
+  echo "Use existing list file ${LOF}"
+  CT=$(cat "${LOF}" | wc -l)
+fi
+
 echo
 
-CT=0
-while read line ; do
-  CT=$(( CT + 1 ))
-  if [ $(( CT % 1000 )) == 0 ] ; then
-    echo "  listed $CT files so far"
-  fi
-done < <(find . -type f | grep -v "^\./\$RECYCLE.BIN" | grep -v "^\./System Volume Information" | grep '[jJ][pP][eE]\?[gG]$\|[mM][pP]4$\|[mM][oO][vV]$\|[aA][vV][iI]$' | tee "$LOF" )
-echo "  listing done; listed file count: $CT."
-echo
-
-echo "Extracting media info"
+echo "Extracting media info into ${OF}, write troubles to ${TO}"
 echo
 
 OCT=$CT
 CT=0
 while read line ; do
   CT=$(( CT + 1 ))
-  if [ $(( CT % 100 )) == 0 ] ; then
+  if [ $(( CT % 100 )) == 0 ] || [ $CT -le 100 ]; then
     echo "  exif info extracted  $CT (of $OCT) files so far"
   fi
   if echo "$line" | grep -q '[jJ][pP][eE]\?[gG]$' ; then
