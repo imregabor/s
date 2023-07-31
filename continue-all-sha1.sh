@@ -58,7 +58,7 @@ while read line ; do
 
   sha1sum -b "$line" >> "$OF_INPROGRESS"
   CT=$(( CT + 1 ))
-  if [ $(( CT % 100 )) == 0 ] ; then
+  if [ $(( CT % 100 )) == 0 ] || [ "$CT" -lt 100 ] ; then
     echo `date`" processed $CT (of $TODOS) files so far"
   fi
 
