@@ -24,7 +24,7 @@ if [ ! -f "$FL" ] ; then
     if [ $(( CT % 1000 )) == 0 ] ; then
       echo `date`" listed $CT files so far"
     fi
-  done < <(find . -type f | grep -v "$OF" | grep -v "$OF_INPROGRESS" | grep -v "$FL_DONE" | grep -v "$FL_TODO" | tee "$FL")
+  done < <(find . -type f | grep -v "$OF" | grep -v "^$OF_INPROGRESS$" | grep -v "^$FL_DONE$" | grep -v "^$FL_TODO$" | grep -v "^$FL$" | tee "$FL")
   echo `date`" listing done; listed file count: $CT"
   echo `date`" start sort"
   sort -o "$FL" "$FL"
@@ -64,11 +64,14 @@ while read line ; do
 
 done < <(cat "$FL_TODO")
 
-echo `date`" Finished checksum calculation; rename $OF_INPROGRESS to  $OF"
+echo `date`" Finished checksum calculation; rename $OF_INPROGRESS to $OF"
 mv "$OF_INPROGRESS" "$OF"
 
+echo `date`" Remove file listings"
+rm -v "$FL_TODO"
+rm -v "$FL_DONE"
+rm -v "$FL"
 
-rm "$FL_TODO"
-rm "$FL_DONE"
-
-echo `date`" All done; total file count: $CT."
+echo `date`" All done; total files visited: $CT."
+echo
+echo
