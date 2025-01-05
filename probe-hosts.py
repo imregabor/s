@@ -16,14 +16,14 @@ def ssh_get_hostname(ip, username, private_key_path, timeout):
     if not private_key_path:
       private_key_path = os.path.expanduser('~/.ssh/id_rsa')
 
-      pkey = paramiko.RSAKey.from_private_key_file(private_key_path)
+    pkey = paramiko.RSAKey.from_private_key_file(private_key_path)
 
-      client.connect(ip, username=username, pkey=pkey, timeout=timeout)
+    client.connect(ip, username=username, pkey=pkey, timeout=timeout)
 
-      stdin, stdout, stderr = client.exec_command('hostname')
-      hostname = stdout.read().decode().strip()
-      client.close()
-      return hostname, None
+    stdin, stdout, stderr = client.exec_command('hostname')
+    hostname = stdout.read().decode().strip()
+    client.close()
+    return hostname, None
   except AuthenticationException:
     return None, 'Authentication failed'
   except SSHException as e:
@@ -31,14 +31,14 @@ def ssh_get_hostname(ip, username, private_key_path, timeout):
   except Exception as e:
     return None, f'Error: {str(e)}'
 
-def probe(entry, timeout):
+def probe(entry, timeout, default_private_key_path):
   ip = entry.get('ip')
   if not ip:
     return ip, 'N/A', 'Invalid entry'
 
   print(f'Connecting to {ip}')
   username = entry.get('username', os.getlogin())
-  private_key_path = entry.get('private_key', None)  # Default to None if not provid
+  private_key_path = entry.get('private_key', default_private_key_path)
   hostname, error = ssh_get_hostname(ip, username, private_key_path, timeout)
 
   if hostname:
@@ -50,12 +50,12 @@ def probe(entry, timeout):
 
 
 
-def generate_report(entries, timeout):
+def generate_report(entries, timeout, default_private_key_path):
   ret = {}
 
   print()
   with ThreadPoolExecutor() as executor:
-    results = list(executor.map(lambda entry : probe(entry, timeout), entries))
+    results = list(executor.map(lambda entry : probe(entry, timeout, default_private_key_path), entries))
 
   print()
 
@@ -83,6 +83,7 @@ def main():
   parser.add_argument('-t', '--timeout', type = int, default = 2, help = 'Connection timeout in seconds (default: 2).')
   parser.add_argument('-r', '--read',    type = str,              help = 'Path to read definition JSON file.')
   parser.add_argument('-w', '--write',   type = str,              help = 'Path to write definition JSON file.')
+  parser.add_argument('-k', '--keyfile', type = str,              help = 'Default private key file.')
 
   args = parser.parse_args()
 
@@ -106,7 +107,11 @@ def main():
     parser.print_help()
     sys.exit(1)
 
-  defs = generate_report(entries, args.timeout)
+  if args.keyfile:
+    default_private_key_path = args.keyfile
+  else:
+    default_private_key_path = None
+  defs = generate_report(entries, args.timeout, default_private_key_path)
 
 
   if args.write:
