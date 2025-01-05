@@ -25,6 +25,7 @@ def get_local_ips_and_subnets():
 def parse_nmap_xml(file_obj, local_ips):
   tree = ET.parse(file_obj)
   root = tree.getroot()
+  ips = set()
 
   print(f"{'L':<1} {'   IP Address':<15} {'   MAC Address':<17} {'Vendor':<30}")
   print("=" * 66)
@@ -38,6 +39,7 @@ def parse_nmap_xml(file_obj, local_ips):
     address = host.find('address[@addrtype="ipv4"]')
     if address is not None:
       ip = address.get('addr', '')
+      ips.add(ip)
       if ip in local_ips:
         local = '*'
 
@@ -48,6 +50,12 @@ def parse_nmap_xml(file_obj, local_ips):
 
       if ip or mac:
         print(f'{local:<1} {ip:<15} {mac:<17} {vendor:<30}')
+
+  print()
+  print('All IP addresses:')
+  print()
+  print(f'  {" ".join(list(ips))}')
+  print()
 
 def usage(subnets):
     print('Usage:')
