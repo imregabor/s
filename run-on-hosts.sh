@@ -14,9 +14,10 @@ usage() {
   echo
   echo "Options:"
   echo "  -r, --read     Path to the definition JSON file."
+  echo "  -H, --host     Specify a single host to run on"
   echo "  -c, --command  Command to run"
   echo "  -h, --help     Display this help message."
-  echo "  =t, --timeout  SSH connect timeout, default 2."
+  echo "  -t, --timeout  SSH connect timeout, default 2."
   echo
   echo "Availeble commands:"
   echo
@@ -25,13 +26,13 @@ usage() {
   echo "   df            df -h"
   echo "   info          One liner system info"
 
-
   exit 1
 }
 
 JSON_FILE=""
 COMMAND=""
 TIMEOUT="2"
+HOST=""
 while [[ $# -gt 0 ]]; do
   case $1 in
     -r|--read)
@@ -47,6 +48,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -t|--timeout)
       TIMEOUT=$2
+      shift 2
+      ;;
+    -H|--host)
+      HOST=$2
       shift 2
       ;;
     *)
@@ -86,14 +91,24 @@ if ! jq empty "$JSON_FILE" 2> /dev/null; then
   exit 1
 fi
 
-IPS=$(jq -r '.[].ip' "$JSON_FILE")
-if [ -z "$IPS" ]; then
-  echo
-  echo "Error: No IPs found in the JSON file."
-  exit 1
+if [ -n "$HOST" ]; then
+  IP=$(jq -r --arg host "$HOST" '.[$host].ip // empty' "$JSON_FILE")
+  if [ -z "$IP" ]; then
+    echo
+    echo "Error: No host / IP found for host \"$HOST\" in JSON file \"$JSON_FILE\"."
+    exit 1
+  fi
+  echo "Will use IP $IP of host \"$HOST\""
+  IPS=$IP
+else
+  IPS=$(jq -r '.[].ip' "$JSON_FILE")
+  if [ -z "$IPS" ]; then
+    echo
+    echo "Error: No IPs found in the JSON file."
+    exit 1
+  fi
+  echo "IPs found: $(echo $IPS | tr '\n' ' ')"
 fi
-
-echo "IPs found: $(echo $IPS | tr '\n' ' ')"
 
 PASSWORD=""
 if [ "$COMMAND" == "mount" ]; then
