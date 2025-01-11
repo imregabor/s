@@ -16,6 +16,7 @@ usage() {
   echo "  -r, --read     Path to the definition JSON file."
   echo "  -c, --command  Command to run"
   echo "  -h, --help     Display this help message."
+  echo "  =t, --timeout  SSH connect timeout, default 2."
   echo
   echo "Availeble commands:"
   echo
@@ -30,6 +31,7 @@ usage() {
 
 JSON_FILE=""
 COMMAND=""
+TIMEOUT="2"
 while [[ $# -gt 0 ]]; do
   case $1 in
     -r|--read)
@@ -43,12 +45,21 @@ while [[ $# -gt 0 ]]; do
       COMMAND=$2
       shift 2
       ;;
+    -t|--timeout)
+      TIMEOUT=$2
+      shift 2
+      ;;
     *)
       echo "Error: Unknown option $1"
       usage
       ;;
   esac
 done
+
+if [[ ! "$TIMEOUT" =~ ^[1-9][0-9]*$ ]] ; then
+  echo "Error: Invalid timeout \"$TIMEOUT\""
+  exit 1
+fi
 
 if [ -z "$COMMAND" ]; then
   echo "Error: Command is required."
@@ -106,16 +117,16 @@ for IP in $IPS; do
 
   case $COMMAND in
     mount)
-      echo "$PASSWORD" | ssh "$IP" 'sudo ./mount-scrs.sh' 2>&1 | sed 's/^/[remote] /'
+      echo "$PASSWORD" | ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'sudo ./mount-scrs.sh' 2>&1 | sed 's/^/[remote] /'
       ;;
     shutdown)
-      ssh "$IP" 'sudo shutdown -h now' 2>&1 | sed 's/^/[remote] /'
+      ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'sudo shutdown -h now' 2>&1 | sed 's/^/[remote] /'
       ;;
     df)
-      ssh "$IP" 'df -h' 2>&1 | sed 's/^/[remote] /'
+      ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'df -h' 2>&1 | sed 's/^/[remote] /'
       ;;
     info)
-      ssh "$IP" 'bash -s' << 'EOF' 2>&1 | sed 's/^/[remote] /'
+      ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'bash -s' << 'EOF' 2>&1 | sed 's/^/[remote] /'
 HOSTNAME=$(hostname)
 MACHINE=$(sudo dmidecode | grep "Product Name:" | sed 's/.*Product Name://' | sed 's/^ *//; s/  */ /g; s/ *$//')
 CPU=$(lscpu | grep -E 'Socket|Model name|Core|Thread' | awk -F: '/Socket/ {s=$2} /Model name/ {m=$2} /Core/ {c=$2} /Thread/ {t=$2} END {print s " x " m ", " s*c " cores, " s*c*t " threads"}' | sed 's/^ *//; s/  */ /g;s/ *$//')
