@@ -150,7 +150,8 @@ KERNEL=$(uname -r)
 MEM=$(free -h | grep Mem | awk '{print $2 ", Available: " $7}')
 DISK=$(df -h --total | grep 'total' | awk '{print $2", Used: "$3", Available: "$4}')
 UPTIME=$(uptime -p)
-echo "$HOSTNAME: $MACHINE | $CPU | Mem: $MEM | Disk: $DISK | $OS | $KERNEL | $UPTIME"
+LOAD=$(uptime | awk -F'load average:' '{print $2}' | sed 's/^ *//; s/  */ /g; s/ *$//')
+echo "$HOSTNAME: $MACHINE | $CPU | Mem: $MEM | Disk: $DISK | $OS | $KERNEL | $UPTIME | Load: $LOAD"
 EOF
       ;;
     *)
