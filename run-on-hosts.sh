@@ -1,6 +1,5 @@
 #bin/bash
 
-# Check if jq is installed
 if ! command -v jq &> /dev/null; then
   echo "Error: jq is not installed. Please install jq and try again."
   exit 1
@@ -10,21 +9,24 @@ usage() {
   echo
   echo "Invoke a command on all hosts"
   echo
-  echo "Usage: $0 -r <JSON_FILE>"
+  echo "Usage:"
+  echo
+  echo "  $0 -r <JSON_FILE> -c <COMMAND> [-h <HOST_NAME>] [-t <SSH_TIMEOUT>]"
   echo
   echo "Options:"
+  echo "  -h, --help     Print this help."
   echo "  -r, --read     Path to the definition JSON file."
-  echo "  -H, --host     Specify a single host to run on"
-  echo "  -c, --command  Command to run"
-  echo "  -h, --help     Display this help message."
-  echo "  -t, --timeout  SSH connect timeout, default 2."
+  echo "  -H, --host     Specify a single host to run on."
+  echo "  -c, --command  Command to run."
+  echo "  -t, --timeout  SSH connect timeout in seconds, default 2."
   echo
   echo "Availeble commands:"
   echo
-  echo "   mount         Invoke \"./mount-scrs.sh\" with a password read from the console"
-  echo "   shutdown      Shutdown now"
+  echo "   mount         Invoke \"./mount-scrs.sh\" with a password read from the console."
+  echo "   shutdown      Shutdown now."
+  echo "   restart       Restart now."
   echo "   df            df -h"
-  echo "   info          One liner system info"
+  echo "   info          One liner system info."
 
   exit 1
 }
@@ -71,10 +73,13 @@ if [ -z "$COMMAND" ]; then
   usage
 fi
 
-if [ "$COMMAND" != "mount" ] && [ "$COMMAND" != "shutdown" ] && [ "$COMMAND" != "df" ] && [ "$COMMAND" != "info" ]; then
-  echo "Error: Unknown command \"$COMMAND\""
-  usage
-fi
+case "$COMMAND" in
+  mount|shutdown|df|info|restart) ;;
+  *)
+    echo "Error: Unknown command \"$COMMAND\""
+    usage
+    ;;
+esac
 
 if [ -z "$JSON_FILE" ]; then
   echo "Error: JSON file is required."
@@ -136,6 +141,9 @@ for IP in $IPS; do
       ;;
     shutdown)
       ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'sudo shutdown -h now' 2>&1 | sed 's/^/[remote] /'
+      ;;
+    restart)
+      ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'sudo shutdown -r now' 2>&1 | sed 's/^/[remote] /'
       ;;
     df)
       ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'df -h' 2>&1 | sed 's/^/[remote] /'
