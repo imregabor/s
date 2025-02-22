@@ -56,6 +56,7 @@ echo "  Write checksums to intermediate file $OF_INPROGRESS"
 echo
 
 CT=0
+T0=$(date +%s)
 
 # see https://stackoverflow.com/questions/13726764/while-loop-subshell-dilemma-in-bash
 while read line ; do
@@ -70,10 +71,18 @@ echo
 echo "  rename $OF_INPROGRESS to $OF"
 mv "$OF_INPROGRESS" "$OF"
 
+T1=$(date +%s)
+DT=$(($T1 - $T0))
+
 echo
 echo
 echo "==========================================="
-echo "All done; total file count: $CT."
+echo
+echo "All done."
+echo
+echo "Total file count: $CT"
+echo "Total time:       $DT s"
+echo
 echo "==========================================="
 echo
 echo
