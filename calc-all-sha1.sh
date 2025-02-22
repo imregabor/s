@@ -4,6 +4,27 @@
 #
 #
 
+echo
+echo "================================================================="
+echo
+echo "Calc SHA1 checksums"
+echo
+echo "Launched in `pwd`"
+echo
+echo "================================================================="
+echo
+
+FCE=$(find -type f | head -1001 | wc -l)
+if [ "$FCE" == "1001" ] ; then
+  echo "  > 1000 files"
+else
+  echo "  Total file count: $FCE"
+fi
+
+echo
+
+
+
 OF="./all.sha1"
 OF_INPROGRESS="./all.sha1-inprogress"
 
@@ -46,6 +67,8 @@ mv "$OF_INPROGRESS" "$OF"
 
 echo
 echo
+echo "==========================================="
 echo "All done; total file count: $CT."
+echo "==========================================="
 echo
 echo
