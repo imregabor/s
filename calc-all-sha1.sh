@@ -49,7 +49,9 @@ if [ -f "$OF" ] ; then
   exit -1
 fi
 
-echo "Write checksums to intermediate file $OF_INPROGRESS"
+
+echo "  Write checksums to intermediate file $OF_INPROGRESS"
+echo
 
 CT=0
 
@@ -62,6 +64,7 @@ while read line ; do
   fi
 done < <(find . -type f | grep -v "$OF_INPROGRESS")
 
+echo
 echo "  rename $OF_INPROGRESS to $OF"
 mv "$OF_INPROGRESS" "$OF"
 
