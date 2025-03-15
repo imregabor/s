@@ -91,6 +91,8 @@ else
   CCSF2="$OD/hits-in-2.$checksum_ext"
   DS1="$OD/delete-hits-in-1.sh"
   DS2="$OD/delete-hits-in-2.sh"
+  OCS1="$OD/all-checksums-of-1.$checksum_ext"
+  OCS2="$OD/all-checksums-of-2.$checksum_ext"
 
   log "  Done, duplicate checksum instances:    $DUPLICATE_COUNT"
   log
@@ -100,11 +102,16 @@ else
   log "  Writing delete script for hits in 1:   $DS1"
   log "  Writing delete script for hits in 2:   $DS2"
   log
+  log "  Preserve all checksums from 1 in:      $OCS1"
+  log "  Preserve all checksums from 2 in:      $OCS2"
+  log
+
+  cp "$checksum_file1" "$OCS1"
+  cp "$checksum_file2" "$OCS2"
 
   I=0
   echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\n' > "$DS1"
   echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\n' > "$DS2"
-
 
   cat "$FILTERED_CHECKSUMS" | while read checksum; do
     I=$(( I + 1 ))
@@ -134,4 +141,15 @@ fi
 
 
 log
+log
+log "================================================================"
+log
 log "All done."
+log
+log "  Total number of unique hits: $DUPLICATE_COUNT"
+log "  Total number of hits in 1:   "$(cat "$CCSF1" | wc -l)
+log "  Total number of hits in 2:   "$(cat "$CCSF2" | wc -l)
+log
+log "================================================================"
+log
+log
