@@ -104,6 +104,8 @@ else
 
   CCSF1="$OD/hits-in-1.$checksum_ext"
   CCSF2="$OD/hits-in-2.$checksum_ext"
+  HFL1="$OD/hits-in-1-filelist.txt"
+  HFL2="$OD/hits-in-2-filelist.txt"
   DS1="$OD/delete-hits-in-1.sh"
   DS2="$OD/delete-hits-in-2.sh"
   OCS1="$OD/all-checksums-of-1.$checksum_ext"
@@ -111,22 +113,25 @@ else
 
   log "  Done, duplicate checksum instances:    $DUPLICATE_COUNT"
   log
-  log "  Writing checksums for files hits in 1: $CCSF1"
-  log "  Writing checksums for files hits in 2: $CCSF2"
+  log "  Writing checksums for files hits in 1:   $CCSF1"
+  log "  Writing checksums for files hits in 2:   $CCSF2"
   log
-  log "  Writing delete script for hits in 1:   $DS1"
-  log "  Writing delete script for hits in 2:   $DS2"
+  log "  Writing (sorted) file list of hits in 1: $HFL1"
+  log "  Writing (sorted) file list of hits in 2: $HFL2"
   log
-  log "  Preserve all checksums from 1 in:      $OCS1"
-  log "  Preserve all checksums from 2 in:      $OCS2"
+  log "  Writing delete script for hits in 1:     $DS1"
+  log "  Writing delete script for hits in 2:     $DS2"
+  log
+  log "  Preserve all checksums from 1 in:        $OCS1"
+  log "  Preserve all checksums from 2 in:        $OCS2"
   log
 
   cp "$checksum_file1" "$OCS1"
   cp "$checksum_file2" "$OCS2"
 
   I=0
-  echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\n' > "$DS1"
-  echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\n' > "$DS2"
+  echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\nFORCE=""\n\n' > "$DS1"
+  echo -e '#!/bin/bash\n\n# This is dangerous!\nexit 1\n\nFORCE=""\n\n' > "$DS2"
 
   cat "$FILTERED_CHECKSUMS" | while read checksum; do
     I=$(( I + 1 ))
@@ -136,7 +141,7 @@ else
     hits1=$(grep "^$checksum" "$checksum_file1")
 
     echo "$hits1" >> "$CCSF1"
-    echo "$hits1" | sed -E 's/^[^ ]+ .(.*)$/rm "\1"/' >> "$DS1"
+    echo "$hits1" | sed -E 's/^[^ ]+ .(.*)$/rm \$FORCE "\1"/' >> "$DS1"
 
     dupes1=$(echo "$hits1" | sed -e 's/^/    /')
 
@@ -152,6 +157,13 @@ else
     log "$dupes2"
     log
   done
+
+  log "Extracting sorted hit file lists"
+  log
+  sed -E 's/^[^ ]+ .//' "$hits1" | LC_ALL=C sort > "$HFL1"
+  sed -E 's/^[^ ]+ .//' "$hits2" | LC_ALL=C sort > "$HFL2"
+
+
 
   log
   log
