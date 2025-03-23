@@ -141,7 +141,7 @@ else
     hits1=$(grep "^$checksum" "$checksum_file1")
 
     echo "$hits1" >> "$CCSF1"
-    echo "$hits1" | sed -E 's/^[^ ]+ .(.*)$/rm \$FORCE "\1"/' >> "$DS1"
+    echo "$hits1" | sed -E 's/^[^ ]+ .(.*)$/rm "$FORCE" "\1"/' >> "$DS1"
 
     dupes1=$(echo "$hits1" | sed -e 's/^/    /')
 
@@ -151,7 +151,7 @@ else
     hits2=$(grep "^$checksum" "$checksum_file2")
 
     echo "$hits2" >> "$CCSF2"
-    echo "$hits2" | sed -E 's/^[^ ]+ .(.*)$/rm "\1"/' >> "$DS2"
+    echo "$hits2" | sed -E 's/^[^ ]+ .(.*)$/rm "$FORCE" "\1"/' >> "$DS2"
 
     dupes2=$(echo "$hits2" | sed -e 's/^/    /')
     log "$dupes2"
@@ -160,8 +160,8 @@ else
 
   log "Extracting sorted hit file lists"
   log
-  sed -E 's/^[^ ]+ .//' "$hits1" | LC_ALL=C sort > "$HFL1"
-  sed -E 's/^[^ ]+ .//' "$hits2" | LC_ALL=C sort > "$HFL2"
+  sed -E 's/^[^ ]+ .//' "$CCSF1" | LC_ALL=C sort > "$HFL1"
+  sed -E 's/^[^ ]+ .//' "$CCSF2" | LC_ALL=C sort > "$HFL2"
 
 
 
