@@ -63,7 +63,7 @@ if [ -z "$checksum_file2" ]; then
   FILTERED_CHECKSUMS="$OD/filtered-checksums"
   log "Looking for duplicate checksums, write results to $FILTERED_CHECKSUMS"
 
-  awk '{print $1}' "$checksum_file1" | sort | uniq -d > "$FILTERED_CHECKSUMS"
+  awk '{print $1}' "$checksum_file1" | sort -u | uniq -d > "$FILTERED_CHECKSUMS"
   DUPLICATE_COUNT=$(cat "$FILTERED_CHECKSUMS" | wc -l)
 
   log "  Done, duplicate checksum instances: $DUPLICATE_COUNT"
@@ -79,6 +79,19 @@ if [ -z "$checksum_file2" ]; then
     log "$dupes"
     log
   done
+
+  log
+  log
+  log "================================================================"
+  log
+  log "All done."
+  log
+  log "  Total number of unique hits: $DUPLICATE_COUNT"
+  log
+  log "================================================================"
+  log
+  log
+
 else
   log "2 File mode, find checksums found in both"
   log
@@ -137,19 +150,21 @@ else
     log "$dupes2"
     log
   done
+
+  log
+  log
+  log "================================================================"
+  log
+  log "All done."
+  log
+  log "  Total number of unique hits: $DUPLICATE_COUNT"
+  log "  Total number of hits in 1:   "$(cat "$CCSF1" | wc -l)
+  log "  Total number of hits in 2:   "$(cat "$CCSF2" | wc -l)
+  log
+  log "================================================================"
+  log
+  log
+
 fi
 
 
-log
-log
-log "================================================================"
-log
-log "All done."
-log
-log "  Total number of unique hits: $DUPLICATE_COUNT"
-log "  Total number of hits in 1:   "$(cat "$CCSF1" | wc -l)
-log "  Total number of hits in 2:   "$(cat "$CCSF2" | wc -l)
-log
-log "================================================================"
-log
-log
