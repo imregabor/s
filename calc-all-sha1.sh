@@ -15,9 +15,9 @@ echo "================================================================="
 echo
 
 TFS=""
-FCE=$(find -type f | head -10001 | wc -l)
-if [ "$FCE" == "10001" ] ; then
-  echo "  > 10000 files"
+FCE=$(find -type f | head -500001 | wc -l)
+if [ "$FCE" == "500001" ] ; then
+  echo "  > 500k files"
 else
   TFS=$(du -h --apparent-size --summarize | cut -f 1)
   echo "  Total file count: $FCE"
