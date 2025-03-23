@@ -22,6 +22,7 @@ fi
 SRCDIR=$(readlink -m "$1")
 OD=$(readlink -m "./sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
 LOGFILE="$OD/report.log"
+ALLCHECKSUMFILES="$OD/all-checksum-files.txt"
 
 mkdir -p "$OD" || { echo "Error: Failed to create output directory '$OD'." >&2; exit 1; }
 log() {
@@ -33,10 +34,11 @@ log "***************************************************************************
 log "**"
 log "**  SHA1 checksums consistency report"
 log "**"
-log "** Current path:     $(pwd)"
-log "** Search dir        $SRCDIR"
-log "** Output directory: $OD"
-log "** Logfile:          $LOGFILE"
+log "** Current path:               $(pwd)"
+log "** Search dir                  $SRCDIR"
+log "** Output directory:           $OD"
+log "** Logfile:                    $LOGFILE"
+log "** List of all checksum files: $ALLCHECKSUMFILES"
 log "**"
 log "**************************************************************************************************************"
 log "**************************************************************************************************************"
@@ -44,6 +46,13 @@ log
 log
 log
 
+
+log "Finding all checksum files to process"
+find -type f -wholename '*/all.sha1' > "$ALLCHECKSUMFILES"
+
+ALLCT=$(wc -l < "$ALLCHECKSUMFILES")
+log "  Found: $ALLCT checksum files"
+log
 
 cd "$SRCDIR"
 
@@ -62,7 +71,7 @@ while IFS= read -r CHECKSUMFILE ; do
 
   log "=============================================================================================================="
   log "="
-  log "= Processing checksum file #$CT: $CHECKSUMFILE"
+  log "= Processing checksum file $CT of $ALLCT: $CHECKSUMFILE"
   log "="
   log "= Individual report dir:           $RD"
   log "="
@@ -164,7 +173,7 @@ while IFS= read -r CHECKSUMFILE ; do
   log
 
 
-done < <(find -type f -wholename '*/all.sha1')
+done < "$ALLCHECKSUMFILES"
 
 log "=============================================================================================================="
 log "All done."
