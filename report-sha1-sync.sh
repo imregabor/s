@@ -84,15 +84,19 @@ while IFS= read -r CHECKSUMFILE ; do
 
   log "  Archive original checksum file to $OCF"
   cp "$SRCDIR/$CHECKSUMFILE" "$OCF"
+  log "    file count in original checksum file: "$(wc -l < "$OCF")
 
   log "  Extract original checksum file list"
   cat "$SRCDIR/$CHECKSUMFILE" | sed -e 's/^[^ ]* .\(.*\)/\1/' | sort -u > "$OCFFL"
+  log "    unique file count listed:             "$(wc -l < "$OCFFL")
 
   log "  List files"
+
 
   cd "$SRCDIR"
   cd "$CD"
   find -type f ! -name "all.sha1" ! -name "all.sha1-backup-*" | sort -u > "$FL"
+  log "    files found:                          "$(wc -l < "$OCFFL")
 
   log "  Calculate new / removed file lists"
 
@@ -102,7 +106,7 @@ while IFS= read -r CHECKSUMFILE ; do
   CHANGE="false"
 
   if [ -s "$RFL" ] ; then
-    log "  Remove missing files from checksum"
+    log "  Remove missing files from checksum. Removed file count: "$(wc -l < "$RFL")
 
     awk 'NR==FNR {
         remove[$0] = "x"
@@ -127,10 +131,10 @@ while IFS= read -r CHECKSUMFILE ; do
   fi
 
   if [ -s "$NFL" ];  then
-    log "  Calculate checksums for new files"
+    log "  Calculate checksums for new files. New file count: "$(wc -l < "$NFL")
     while IFS= read -r NEWFILE ; do
       log "    > $NEWFILE"
-      sha1sum "$NEWFILE" >> "$NCF"
+      sha1sum -b "$NEWFILE" >> "$NCF"
     done < "$NFL"
 
     CHANGE="true"
