@@ -63,7 +63,7 @@ if [ -z "$checksum_file2" ]; then
   FILTERED_CHECKSUMS="$OD/filtered-checksums"
   log "Looking for duplicate checksums, write results to $FILTERED_CHECKSUMS"
 
-  awk '{print $1}' "$checksum_file1" | sort -u | uniq -d > "$FILTERED_CHECKSUMS"
+  sort -u "$checksum_file1" | awk '{print $1}' | sort | uniq -d > "$FILTERED_CHECKSUMS"
   DUPLICATE_COUNT=$(cat "$FILTERED_CHECKSUMS" | wc -l)
 
   log "  Done, duplicate checksum instances: $DUPLICATE_COUNT"
