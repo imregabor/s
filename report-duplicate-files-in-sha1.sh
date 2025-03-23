@@ -41,16 +41,18 @@ log() {
 log
 log "================================================================"
 log
-log "Ext:           $checksum_ext"
+log "Ext:                $checksum_ext"
 log
-log "Checksum 1:    $checksum_file1"
-log "               $checksum_file1_abs"
-log "File 1 count: "$(cat "$checksum_file1" | wc -l)
+log "Checksum 1:         $checksum_file1"
+log "                    $checksum_file1_abs"
+log
+log "Checksum 1 entries: "$(cat "$checksum_file1" | wc -l)
 log 
 if [ ! -z "$checksum_file2" ]; then
-  log "Checksum 2:    $checksum_file2"
-  log "               $checksum_file2_abs"
-  log "File 2 count: "$(cat "$checksum_file2" | wc -l)
+  log "Checksum 2:         $checksum_file2"
+  log "                    $checksum_file2_abs"
+  log
+  log "Checksum 2 entries: "$(cat "$checksum_file2" | wc -l)
   log
 fi
 log "================================================================"
