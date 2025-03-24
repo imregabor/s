@@ -46,6 +46,7 @@ log
 log
 log
 
+cd "$SRCDIR"
 
 log "Finding all checksum files to process"
 find -type f -wholename '*/all.sha1' > "$ALLCHECKSUMFILES"
@@ -54,7 +55,6 @@ ALLCT=$(wc -l < "$ALLCHECKSUMFILES")
 log "  Found: $ALLCT checksum files"
 log
 
-cd "$SRCDIR"
 
 CT=0
 
