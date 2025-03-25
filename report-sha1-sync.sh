@@ -118,7 +118,9 @@ visit() {
   log "= Original checksum file lists:    $OCFFL"
   log "= New file list:                   $NFL"
   log "= Removed file list:               $RFL"
-  log "= New checksum file:               $NCF"
+  if [ "$CHANGE" = true ]; then
+    log "= New checksum file:               $NCF"
+  fi
   log "="
   log "=============================================================================================================="
   log
@@ -147,66 +149,82 @@ visit() {
 
   CHANGE="false"
 
-  if [ -s "$RFL" ] ; then
-    log "  Remove missing files from checksum. Removed file count: "$(wc -l < "$RFL")
+  if [ "$FIX_MODE" = "true" ]; then
+    # Fixing
+    if [ -s "$RFL" ] ; then
+      log "  Remove missing files from checksum. Removed file count: "$(wc -l < "$RFL")
 
-    awk 'NR==FNR {
-        remove[$0] = "x"
-        next
-      }
-      {
-        pos1 = index($0, "  ")
-        pos2 = index($0, " *")
+      awk 'NR==FNR {
+          remove[$0] = "x"
+          next
+        }
+        {
+          pos1 = index($0, "  ")
+          pos2 = index($0, " *")
 
-        if (pos1 == 0) pos1 = length($0) + 1
-        if (pos2 == 0) pos2 = length($0) + 1
-        path_start = (pos1 < pos2) ? pos1 : pos2
+          if (pos1 == 0) pos1 = length($0) + 1
+          if (pos2 == 0) pos2 = length($0) + 1
+          path_start = (pos1 < pos2) ? pos1 : pos2
 
-        path = substr($0, path_start + 2)
-        if (!(path in remove)) print $0
-      }' "$RFL" "$OCF" > "$NCF"
+          path = substr($0, path_start + 2)
+          if (!(path in remove)) print $0
+        }' "$RFL" "$OCF" > "$NCF"
 
       CHANGE="true"
-  else
-    log "  No files to remove"
-    cp "$OCF" "$NCF"
-  fi
+    else
+      log "  No files to remove"
+      cp "$OCF" "$NCF"
+    fi
 
-  if [ -s "$NFL" ];  then
-    log "  Calculate checksums for new files. New file count: "$(wc -l < "$NFL")
-    while IFS= read -r NEWFILE ; do
-      log "    > $NEWFILE"
-      sha1sum -b "$NEWFILE" >> "$NCF"
-    done < "$NFL"
+    if [ -s "$NFL" ];  then
+      log "  Calculate checksums for new files. New file count: "$(wc -l < "$NFL")
+      while IFS= read -r NEWFILE ; do
+        log "    > $NEWFILE"
+        sha1sum -b "$NEWFILE" >> "$NCF"
+      done < "$NFL"
+      CHANGE="true"
+    fi
 
-    CHANGE="true"
-  else
-    log "  No new files"
-  fi
-
-  log
-
-  if [ "$CHANGE" = "true" ]; then
-    if [ "$FIX_MODE" = "true" ]; then
+    if [ "$CHANGE" = "true" ]; then
       log "  Archive and overwrite"
       cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
       cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/  /'
     else
-      log "  Checksum file is not valid, do not change. consult $NCF"
+      log "  Checksum file is valid, no need to update"
     fi
   else
-    log "  Checksum file is valid, no need to update"
+    # Not fixing just logging
+    if [ -s "$RFL" ] ; then
+      log "  There are missing files, no changes will be made, skip removal. Missing files:"
+      while IFS= read -r REMOVEDFILE ; do
+        log "    > $REMOVEDFILE"
+      done < "$RFL"
+    else
+      log "  No files to remove"
+    fi
+
+    if [ -s "$NFL" ];  then
+      echo "  There are new files, no changes will be made, skip checksum calculation. New files:"
+      while IFS= read -r NEWFILE ; do
+        log "    > $NEWFILE"
+      done < "$NFL"
+    else
+      log "  No new files"
+    fi
   fi
+
 
   log
   log
   log "  File count:                     "$(wc -l < "$FL")
-  log "  Original checksum count:        "$(wc -l < "$OCF")
-  log "  Checksum unique paths:          "$(wc -l < "$OCFFL")
-  log "  New file count:                 "$(wc -l < "$NFL")
+  log "  Original checksum entries:      "$(wc -l < "$OCF")
+  log "  Original checksum unique paths: "$(wc -l < "$OCFFL")
+  log "  Actual (new) file count:        "$(wc -l < "$NFL")
   log "  Removed file count:             "$(wc -l < "$RFL")
-  log "  New checksum count:             "$(wc -l < "$NCF")
-  log "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
+  if [ "$CHANGE" = true ]; then
+    log "  New checksum entries:           "$(wc -l < "$NCF")
+    log "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
+  fi
   log
   log
   log
