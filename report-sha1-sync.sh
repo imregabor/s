@@ -118,7 +118,7 @@ visit() {
   log "= Original checksum file lists:    $OCFFL"
   log "= New file list:                   $NFL"
   log "= Removed file list:               $RFL"
-  if [ "$CHANGE" = true ]; then
+  if [ "$FIX_MODE" = true ]; then
     log "= New checksum file:               $NCF"
   fi
   log "="
@@ -147,10 +147,10 @@ visit() {
   comm -23 "$FL" "$OCFFL" > "$NFL"
   comm -13 "$FL" "$OCFFL" > "$RFL"
 
-  CHANGE="false"
+  CHANGE=false
 
   log
-  if [ "$FIX_MODE" = "true" ]; then
+  if [ "$FIX_MODE" = true ]; then
     # Fixing
     if [ -s "$RFL" ] ; then
       log "  Remove missing files from checksum. Removed file count: "$(wc -l < "$RFL")
@@ -171,7 +171,7 @@ visit() {
           if (!(path in remove)) print $0
         }' "$RFL" "$OCF" > "$NCF"
 
-      CHANGE="true"
+      CHANGE=true
     else
       log "  No files to remove"
       cp "$OCF" "$NCF"
@@ -183,10 +183,10 @@ visit() {
         log "    > $NEWFILE"
         sha1sum -b "$NEWFILE" >> "$NCF"
       done < "$NFL"
-      CHANGE="true"
+      CHANGE=true
     fi
     log
-    if [ "$CHANGE" = "true" ]; then
+    if [ "$CHANGE" = true ]; then
       log "  Archive and overwrite"
       cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
       cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/  /'
@@ -224,7 +224,7 @@ visit() {
   log "  Original checksum unique paths: "$(wc -l < "$OCFFL")
   log "  Actual (new) file count:        "$(wc -l < "$NFL")
   log "  Removed file count:             "$(wc -l < "$RFL")
-  if [ "$CHANGE" = true ]; then
+  if [ "$FIX_MODE" = true ]; then
     log "  New checksum entries:           "$(wc -l < "$NCF")
     log "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
   fi
