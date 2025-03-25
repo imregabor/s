@@ -8,66 +8,101 @@ if ! command -v readlink &> /dev/null; then
   exit 1
 fi
 
-
-if [ "$#" -lt 1 ] || [ "$#" -gt 1 ]; then
-  echo "Usage: $0 <directory_to_search_for_checksum_files>"
+usage() {
+  echo
+  echo "Check/report/fix sync between FS and checksum file(s)"
+  echo
+  echo "Usage:"
+  echo
+  echo "  $0 [-h] [-f] <TARGET_PATH>"
+  echo
+  echo "<TARGET_PATH> Target location:"
+  echo
+  echo "  If points to a checksum file it will be checked."
+  echo
+  echo "  If points to a directory it will be searched for \"all.sha\" files,"
+  echo "  all hits will be processed."
+  echo
+  echo "Options:"
+  echo "  -h, --help     Print this help and exit."
+  echo "  -f, --fix      Fix checksum file(s) in case of discrepancy."
+  echo
   exit 1
-fi
-
-if [ ! -d "$1" ]; then
-  echo "Error: Search directory '$1' not found."
-  exit 1
-fi
-
-SRCDIR=$(readlink -m "$1")
-OD=$(readlink -m "./sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
-LOGFILE="$OD/report.log"
-ALLCHECKSUMFILES="$OD/all-checksum-files.txt"
-
-mkdir -p "$OD" || { echo "Error: Failed to create output directory '$OD'." >&2; exit 1; }
-log() {
-  echo "$1" | tee -a "$LOGFILE"
 }
 
-log "**************************************************************************************************************"
-log "**************************************************************************************************************"
-log "**"
-log "**  SHA1 checksums consistency report"
-log "**"
-log "** Current path:               $(pwd)"
-log "** Search dir                  $SRCDIR"
-log "** Output directory:           $OD"
-log "** Logfile:                    $LOGFILE"
-log "** List of all checksum files: $ALLCHECKSUMFILES"
-log "**"
-log "**************************************************************************************************************"
-log "**************************************************************************************************************"
-log
-log
-log
+# Default values
+FIX_MODE=false
+TARGET=""
 
-cd "$SRCDIR"
+# Argument parsing
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      ;;
+    -f|--fix)
+      FIX_MODE=true
+      shift
+      ;;
+    *)
+      if [[ -z "$TARGET" ]]; then
+        TARGET="$1"
+      else
+        echo "Error: Multiple targets provided."
+        echo
+        usage
+      fi
+      shift
+      ;;
+  esac
+done
 
-log "Finding all checksum files to process"
-find -type f -wholename '*/all.sha1' > "$ALLCHECKSUMFILES"
+# Ensure target is provided
+if [[ -z "$TARGET" ]]; then
+  echo "Error: No target file or directory specified."
+  echo
+  usage
+fi
 
-ALLCT=$(wc -l < "$ALLCHECKSUMFILES")
-log "  Found: $ALLCT checksum files"
-log
+# Ensure target is provided
+if [[ ! -e "$TARGET" ]]; then
+  echo "Target file/dir not found: $TARGET"
+  echo
+  usage
+fi
+
+# Output dir for report
+OD=$(readlink -m "./sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
+LOGFILE="$OD/report.log"
+mkdir -p "$OD" || { echo "Error: Failed to create output report directory '$OD'." >&2; exit 1; }
+
+log() {
+  echo "$@" | tee -a "$LOGFILE"
+}
 
 
+# Visited checksum file count
 CT=0
+# All checksum file count
+ALLCT=0
 
-while IFS= read -r CHECKSUMFILE ; do
+# All checksum files encountered
+ALLCHECKSUMFILES="$OD/all-checksum-files.txt"
+
+visit() {
+  local CHECKSUMFILE
+  CHECKSUMFILE=$1
+
   CT=$((CT + 1))
   RD="$OD/report-"$(printf "%04d" "$CT")
   CD=$(dirname "$CHECKSUMFILE")
+  CD=$(readlink -m "$CD")
   FL="$RD/file-list.txt"
-  OCF="$RD/all.sha1-original"
+  OCF="$RD/"$(basename "$CHECKSUMFILE")"-original"
   OCFFL="$RD/file-list-from-original-checksum-file.txt"
   NFL="$RD/new-file-list.txt"
   RFL="$RD/removed-file-list.txt"
-  NCF="$RD/all.sha1-new"
+  NCF="$RD/"$(basename "$CHECKSUMFILE")"-new"
 
   log "=============================================================================================================="
   log "="
@@ -92,17 +127,15 @@ while IFS= read -r CHECKSUMFILE ; do
   echo "$CD" > "$RD/pwd.txt"
 
   log "  Archive original checksum file to $OCF"
-  cp "$SRCDIR/$CHECKSUMFILE" "$OCF"
+  cp "$CHECKSUMFILE" "$OCF"
   log "    file count in original checksum file: "$(wc -l < "$OCF")
 
   log "  Extract original checksum file list"
-  cat "$SRCDIR/$CHECKSUMFILE" | sed -e 's/^[^ ]* .\(.*\)/\1/' | sort -u > "$OCFFL"
+  cat "$CHECKSUMFILE" | sed -e 's/^[^ ]* .\(.*\)/\1/' | sort -u > "$OCFFL"
   log "    unique file count listed:             "$(wc -l < "$OCFFL")
 
   log "  List files"
 
-
-  cd "$SRCDIR"
   cd "$CD"
   find -type f ! -name "all.sha1" ! -name "all.sha1-backup-*" | sort -u > "$FL"
   log "    files found:                          "$(wc -l < "$OCFFL")
@@ -151,10 +184,16 @@ while IFS= read -r CHECKSUMFILE ; do
     log "  No new files"
   fi
 
+  log
+
   if [ "$CHANGE" = "true" ]; then
-    log "  Archive and overwrite"
-    cp -v "./all.sha1" "./all.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
-    cp -v "$NCF" "./all.sha1" | sed -e 's/^/  /'
+    if [ "$FIX_MODE" = "true" ]; then
+      log "  Archive and overwrite"
+      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
+      cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/  /'
+    else
+      log "  Checksum file is not valid, do not change. consult $NCF"
+    fi
   else
     log "  Checksum file is valid, no need to update"
   fi
@@ -162,7 +201,7 @@ while IFS= read -r CHECKSUMFILE ; do
   log
   log
   log "  File count:                     "$(wc -l < "$FL")
-  log "  Original checksum count:        "$(wc -l < "./all.sha1")
+  log "  Original checksum count:        "$(wc -l < "$OCF")
   log "  Checksum unique paths:          "$(wc -l < "$OCFFL")
   log "  New file count:                 "$(wc -l < "$NFL")
   log "  Removed file count:             "$(wc -l < "$RFL")
@@ -172,12 +211,67 @@ while IFS= read -r CHECKSUMFILE ; do
   log
   log
 
+}
 
-done < "$ALLCHECKSUMFILES"
+
+log "**************************************************************************************************************"
+log "**************************************************************************************************************"
+log "**"
+log "**  SHA1 checksums consistency report"
+log "**"
+log "** Current path:               $(pwd)"
+log "** Do fixes:                   $FIX_MODE"
+log "** Target:                     $TARGET"
+log "** Output directory:           $OD"
+log "** Logfile:                    $LOGFILE"
+log "** List of all checksum files: $ALLCHECKSUMFILES"
+log "**"
+log "**************************************************************************************************************"
+log "**************************************************************************************************************"
+log
+log
+log
+
+
+
+# Determine if target is a checksum file or directory
+if [[ -f "$TARGET" ]]; then
+  log "Single file check - target is a file: $TARGET"
+  log
+
+  echo "$TARGET" > "$ALLCHECKSUMFILES"
+
+  ALLCT=1
+
+  visit "$TARGET"
+
+elif [[ -d "$TARGET" ]]; then
+  log "Target is a directory, searching for 'all.sha' files in: $TARGET"
+
+  SRCDIR=$(readlink -m "$TARGET")
+
+  log "Absolute path: $SRCDIR"
+  log
+
+  cd "$SRCDIR"
+
+  log "Finding all checksum files to process"
+  find -type f -wholename '*/all.sha1' > "$ALLCHECKSUMFILES"
+
+  ALLCT=$(wc -l < "$ALLCHECKSUMFILES")
+  log "  Found: $ALLCT checksum files"
+  log
+
+  while IFS= read -r CHECKSUMFILE ; do
+    cd "$SRCDIR"
+    visit "$CHECKSUMFILE"
+  done < "$ALLCHECKSUMFILES"
+
+else
+  echo "Error: Target '$TARGET' is neither a file nor a directory."
+  exit 1
+fi
 
 log "=============================================================================================================="
 log "All done."
 log "=============================================================================================================="
-
-
-
