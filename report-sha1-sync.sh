@@ -149,6 +149,7 @@ visit() {
 
   CHANGE="false"
 
+  log
   if [ "$FIX_MODE" = "true" ]; then
     # Fixing
     if [ -s "$RFL" ] ; then
@@ -175,7 +176,7 @@ visit() {
       log "  No files to remove"
       cp "$OCF" "$NCF"
     fi
-
+    log
     if [ -s "$NFL" ];  then
       log "  Calculate checksums for new files. New file count: "$(wc -l < "$NFL")
       while IFS= read -r NEWFILE ; do
@@ -184,7 +185,7 @@ visit() {
       done < "$NFL"
       CHANGE="true"
     fi
-
+    log
     if [ "$CHANGE" = "true" ]; then
       log "  Archive and overwrite"
       cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
@@ -202,12 +203,14 @@ visit() {
     else
       log "  No files to remove"
     fi
-
+    log
     if [ -s "$NFL" ];  then
+      log
       echo "  There are new files, no changes will be made, skip checksum calculation. New files:"
       while IFS= read -r NEWFILE ; do
         log "    > $NEWFILE"
       done < "$NFL"
+      log
     else
       log "  No new files"
     fi
