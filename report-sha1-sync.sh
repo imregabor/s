@@ -3,6 +3,8 @@
 # Report sync between FS and "all.sha1" checksum files
 #
 
+set -e
+
 if ! command -v readlink &> /dev/null; then
   echo "Error: readlink is not available."
   exit 1
@@ -86,12 +88,24 @@ CT=0
 # All checksum file count
 ALLCT=0
 
+# Unchanged checksum file count
+CT_UNCHANGED=0
+
+# Changed checksum file count
+CT_CHANGED=0
+
+# Checksum files involved in additions
+CT_ADDED=0
+
+# Checksum files involved in removal
+CT_REMOVED=0
+
 # All checksum files encountered
 ALLCHECKSUMFILES="$OD/all-checksum-files.txt"
 
 visit() {
   local CHECKSUMFILE
-  CHECKSUMFILE=$1
+  CHECKSUMFILE=$(readlink -m "$1")
 
   CT=$((CT + 1))
   RD="$OD/report-"$(printf "%04d" "$CT")
@@ -129,7 +143,7 @@ visit() {
   echo "$CD" > "$RD/pwd.txt"
 
   log "  Archive original checksum file to $OCF"
-  cp "$CHECKSUMFILE" "$OCF"
+  cp -v "$CHECKSUMFILE" "$OCF" | sed -e 's/^/    /'
   log "    file count in original checksum file: "$(wc -l < "$OCF")
 
   log "  Extract original checksum file list"
@@ -153,6 +167,7 @@ visit() {
   if [ "$FIX_MODE" = true ]; then
     # Fixing
     if [ -s "$RFL" ] ; then
+      CT_REMOVED=$((CT_REMOVED+1))
       log "  Remove missing files from checksum. Removed file count: "$(wc -l < "$RFL")
 
       awk 'NR==FNR {
@@ -178,6 +193,7 @@ visit() {
     fi
     log
     if [ -s "$NFL" ];  then
+      CT_ADDED=$((CT_ADDED+1))
       log "  Calculate checksums for new files. New file count: "$(wc -l < "$NFL")
       while IFS= read -r NEWFILE ; do
         log "    > $NEWFILE"
@@ -187,33 +203,44 @@ visit() {
     fi
     log
     if [ "$CHANGE" = true ]; then
+      CD_CHANGED=$((CD_CHANGED+1))
       log "  Archive and overwrite"
-      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/  /'
-      cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/  /'
+      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/    /'
+      cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/    /'
     else
+      CD_UNCHANGED=$((CD_UNCHANGED+1))
       log "  Checksum file is valid, no need to update"
     fi
   else
     # Not fixing just logging
     if [ -s "$RFL" ] ; then
+      CT_REMOVED=$((CT_REMOVED+1))
       log "  There are missing files, no changes will be made, skip removal. Missing files:"
       while IFS= read -r REMOVEDFILE ; do
         log "    > $REMOVEDFILE"
       done < "$RFL"
+      CHANGE=true
     else
       log "  No files to remove"
     fi
     log
     if [ -s "$NFL" ];  then
-      log
-      echo "  There are new files, no changes will be made, skip checksum calculation. New files:"
+      CT_ADDED=$((CT_ADDED+1))
+      log  "  There are new files, no changes will be made, skip checksum calculation. New files:"
       while IFS= read -r NEWFILE ; do
         log "    > $NEWFILE"
       done < "$NFL"
       log
+      CHANGE=true
     else
       log "  No new files"
     fi
+    if [ "$CHANGE" = true ]; then
+      CD_CHANGED=$((CD_CHANGED+1))
+    else
+      CD_UNCHANGED=$((CD_UNCHANGED+1))
+    fi
+
   fi
 
 
@@ -228,6 +255,8 @@ visit() {
     log "  New checksum entries:           "$(wc -l < "$NCF")
     log "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
   fi
+  log
+  log "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
   log
   log
   log
@@ -295,4 +324,5 @@ fi
 
 log "=============================================================================================================="
 log "All done."
+log "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
 log "=============================================================================================================="
