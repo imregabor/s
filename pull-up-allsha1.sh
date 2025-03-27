@@ -25,18 +25,20 @@ while read sumfile ; do
 
   echo "  Processing sum file: $SUMFILECT / sum lines: $SUMLINECT: \"$sumfile\""
 
-  # in sha1sum format:    <checksum>[space][space or star]./<subpath>
-  # First sed keeps:      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  # Third sed keeps:                                       ^^^^^^^
+  # in sha1sum format:       <checksum>[space][space or star]./<subpath>
+  # First sed keeps:         ^^^^^^^^^^                       |        |
+  # Third sed keeps:                                          ^^^^^^^^^^
 
 
-  # out sha1sum format:   <checksum>[space][space or star]./<sumfilepath><subpath>
-  # awk generates:                                          ^^^^^^^^^^^^^
+  # out sha1sum format:      <checksum>[space][         star]./<sumfilepath><subpath>
+  # coming from first sed:   ^^^^^^^^^^|                                   ||       |
+  # awk generates:                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^|       |
+  # coming from second sed:                                                 ^^^^^^^^^
   # sumfilepath starts with './'
 
-  paste -d '' <(sed -E 's|^([^ ]+ .).*|\1|' "$sumfile") \
-              <(cat "$sumfile" | awk -v line="$SUMFILEPATH" '{ print line }') \
-              <(sed -E 's|^[^ ]+ .\.(\/.*)|\1|' "$sumfile") >> "$OF"
+  paste -d '' <(sed -E 's|^([^ ]+) |\1|' "$sumfile") \
+              <(cat "$sumfile" | awk -v line=" \*$SUMFILEPATH" '{ print line }') \
+              <(sed -E 's|^[^ ]+ .\.(\/.*)|\1|' "$sumfile") | sort -u >> "$OF"
 
 done < <(find -type f -wholename '*/all.sha1')
 
