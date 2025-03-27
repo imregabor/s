@@ -10,6 +10,13 @@ if [ -e "$OF" ] ; then
   exit -1
 fi
 
+OFTMP="./all.sha1-inprogress"
+if [ -e "$OFTMP" ] ; then
+  echo "ERROR! Output temp location \"$OFTMP\" already exists, exiting."
+  exit -1
+fi
+
+
 SUMFILECT=0
 SUMLINECT=0
 
@@ -40,10 +47,13 @@ while read sumfile ; do
 
   paste -d '' <(sed -E 's|^([^ ]+) .*|\1|' "$sumfile") \
               <(cat "$sumfile" | awk -v sumfilepath="$SUMFILEPATH" '{ print " *" sumfilepath }') \
-              <(sed -E 's|^[^ ]+ .\.(\/.*)|\1|' "$sumfile") | sort -u >> "$OF"
+              <(sed -E 's|^[^ ]+ .\.(\/.*)|\1|' "$sumfile") >> "$OFTMP"
 
 done < <(find -type f -wholename '*/all.sha1')
 
+echo "Done, make output unique"
+sort -u "$OFTMP" > "$OF"
+rm "$OFTMP"
 
 echo
 echo "========================================================================="
