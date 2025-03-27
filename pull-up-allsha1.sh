@@ -52,7 +52,7 @@ while read sumfile ; do
 done < <(find -type f -wholename '*/all.sha1')
 
 echo "Done, make output unique"
-sort -u "$OFTMP" > "$OF"
+sort -u -k 2 "$OFTMP" > "$OF"
 rm "$OFTMP"
 
 echo
