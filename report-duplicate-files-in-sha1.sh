@@ -65,7 +65,13 @@ if [ -z "$checksum_file2" ]; then
   FILTERED_CHECKSUMS="$OD/filtered-checksums"
   log "Looking for duplicate checksums, write results to $FILTERED_CHECKSUMS"
 
-  sort -u "$checksum_file1" | awk '{print $1}' | sort | uniq -d > "$FILTERED_CHECKSUMS"
+  sed -E 's/^([^ ]*) ./\1 */' "$checksum_file1" | # avoid false duplicates due to the same entry present as binary and default
+    sort -u |                                     # throw out repeated entries, all normalized to binary
+    awk '{print $1}' |                            # extract checksums for unique paths
+    sort |                                        # not necessary
+    uniq -d > "$FILTERED_CHECKSUMS"               # keep checksums having more than one occurrence
+
+
   DUPLICATE_COUNT=$(cat "$FILTERED_CHECKSUMS" | wc -l)
 
   log "  Done, duplicate checksum instances: $DUPLICATE_COUNT"
@@ -77,7 +83,9 @@ if [ -z "$checksum_file2" ]; then
   cat "$FILTERED_CHECKSUMS" | while read checksum; do
     I=$(( I + 1 ))
     log "Duplicate checksum $I of $DUPLICATE_COUNT: $checksum"
-    dupes=$(grep "^$checksum" "$checksum_file1")
+    dupes=$(grep "^$checksum" "$checksum_file1" | # might contain duplicates, both verbatim and binary/default
+      sed -E 's/^([^ ]*) ./\1 */' |               # normalize to binary
+      sort -u)
     log "$dupes"
     log
   done
@@ -138,7 +146,8 @@ else
     log "Matching checksum $I of $DUPLICATE_COUNT in both files: $checksum"
     log "  [$checksum_file1]"
 
-    hits1=$(grep "^$checksum" "$checksum_file1")
+    # checksum entries for this checksum in 1, normalized to binary, uniqe
+    hits1=$(grep "^$checksum" "$checksum_file1" | sed -E 's/^([^ ]*) ./\1 */' | sort -u)
 
     echo "$hits1" >> "$CCSF1"
     echo "$hits1" | sed -E 's/^[^ ]+ .(.*)$/rm "$FORCE" "\1"/' >> "$DS1"
@@ -148,7 +157,8 @@ else
     log "$dupes1"
     log "  [$checksum_file2]"
 
-    hits2=$(grep "^$checksum" "$checksum_file2")
+    # checksum entries for this checksum in 2, normalized to binary, uniqe
+    hits2=$(grep "^$checksum" "$checksum_file2" | sed -E 's/^([^ ]*) ./\1 */' | sort -u)
 
     echo "$hits2" >> "$CCSF2"
     echo "$hits2" | sed -E 's/^[^ ]+ .(.*)$/rm "$FORCE" "\1"/' >> "$DS2"
