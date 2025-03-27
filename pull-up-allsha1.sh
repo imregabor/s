@@ -30,14 +30,16 @@ while read sumfile ; do
   # Third sed keeps:                                          ^^^^^^^^^^
 
 
-  # out sha1sum format:      <checksum>[space][         star]./<sumfilepath><subpath>
-  # coming from first sed:   ^^^^^^^^^^|                                   ||       |
-  # awk generates:                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^|       |
-  # coming from second sed:                                                 ^^^^^^^^^
-  # sumfilepath starts with './'
+  # out sha1sum format:      <checksum>[space][         star]<sumfilepath>/<subpath>
+  # coming from first sed:   ^^^^^^^^^^|                                 ||        |
+  # awk generates:                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^|        |
+  # coming from second sed:                                               ^^^^^^^^^^
+  #
+  # sumfilepath starts with './', does not end with '/'
+  # subpath is picked with the preceding / but not the preceding .
 
-  paste -d '' <(sed -E 's|^([^ ]+) |\1|' "$sumfile") \
-              <(cat "$sumfile" | awk -v line=" \*$SUMFILEPATH" '{ print line }') \
+  paste -d '' <(sed -E 's|^([^ ]+) .*|\1|' "$sumfile") \
+              <(cat "$sumfile" | awk -v sumfilepath="$SUMFILEPATH" '{ print " *" sumfilepath }') \
               <(sed -E 's|^[^ ]+ .\.(\/.*)|\1|' "$sumfile") | sort -u >> "$OF"
 
 done < <(find -type f -wholename '*/all.sha1')
