@@ -28,8 +28,8 @@ echo
 
 
 
-OF="./all.sha1"
-OF_INPROGRESS="./all.sha1-inprogress"
+OF=$(readlink -m "./all.sha1")
+OF_INPROGRESS=$(readlink -m "./all.sha1-inprogress")
 
 if [ ! -z "$1" ] ; then
   OF=$(readlink -m "$OF")
