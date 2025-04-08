@@ -151,8 +151,8 @@ for IP in $IPS; do
     info)
       ssh -o "ConnectTimeout=$TIMEOUT" "$IP" 'bash -s' << 'EOF' 2>&1 | sed 's/^/[remote] /'
 HOSTNAME=$(hostname)
-MACHINE=$(sudo dmidecode | grep "Product Name:" | sed 's/.*Product Name://' | grep -v 'To Be Filled By O.E.M.' | sed 's/^ *//; s/  */ /g; s/ *$//')
-CPU=$(lscpu | grep -E 'Socket|Model name|Core|Thread' | awk -F: '/Socket/ {s=$2} /Model name/ {m=$2} /Core/ {c=$2} /Thread/ {t=$2} END {print s " x " m ", " s*c " cores, " s*c*t " threads"}' | sed 's/^ *//;s/  */ /g;s/ *$//;s/E7- 4870/E7-4870/')
+MACHINE=$(sudo -n dmidecode | grep "Product Name:" | sed 's/.*Product Name://' | grep -v 'To Be Filled By O.E.M.' | sed 's/^ *//; s/  */ /g; s/ *$//' | awk '{ print ((NR>1)?" (":"") $0 ((NR>1)?")":"") }' | tr -d '\r\n')
+CPU=$(lscpu | grep -E '^Socket|^Model name|^Core|^Thread|^Architecture' | sed -e 's/: */:/' | awk -F: '/^Architecture/ {a=$2} /^Socket/ {s=$2} /^Model name/ {m=$2} /^Core/ {c=$2} /^Thread/ {t=$2} END {print s " x " m " (" a "), " s*c " cores, " s*c*t " threads"}' | sed 's/^ *//;s/  */ /g;s/ *$//;s/E7- 4870/E7-4870/')
 OS=$(lsb_release -sd)
 KERNEL=$(uname -r)
 MEM=$(free -h | grep Mem | awk '{print $2 ", Available: " $7}')
