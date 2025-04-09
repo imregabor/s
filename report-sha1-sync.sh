@@ -173,7 +173,7 @@ process_checksum_file() {
   echo "$CD" > "$RD/pwd.txt"
 
   vlog "  Archive original checksum file to $OCF"
-  cp -v "$CHECKSUMFILE" "$OCF" | sed -e 's/^/    /'
+  cp "$CHECKSUMFILE" "$OCF"
   vlog "    file count in original checksum file: "$(wc -l < "$OCF")
 
   vlog "  Extract original checksum file list"
@@ -193,7 +193,7 @@ process_checksum_file() {
 
   CHANGE=false
 
-  log
+  vlog
 
   if [ -s "$RFL" ] ; then
     MISSING_FILES=$(wc -l < "$RFL")
@@ -262,15 +262,15 @@ process_checksum_file() {
   else
     vlog "  No files added to the FS"
   fi
-  log
+  vlog
 
   if [ "$CHANGE" = true ]; then
     CT_CHANGED=$((CT_CHANGED+1))
 
     if [ "$FIX_NEW" = true ] || [ "$FIX_DELETED" = true ]; then
       log "  Archive and overwrite"
-      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/    /'
-      cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/    /'
+      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/    /' | tee -a "$LOGFILE"
+      cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/    /' | tee -a "$LOGFILE"
     fi
 
   else
