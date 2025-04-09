@@ -27,6 +27,7 @@ usage() {
   echo
   echo "Options:"
   echo "  -h,  --help         Print this help and exit."
+  echo "  -v,  --verbose      Be more verbose. Note that verbose log file is always written."
   echo "  -fn, --fix-new      Fix checksum file(s) in case of new file discrepancy - calculate checksum for new files."
   echo "  -fd, --fix-deleted  Fix checksum file(s) in case of deleted file discrepancy - remove missing file from checksum."
   echo
@@ -37,12 +38,17 @@ usage() {
 FIX_NEW=false
 FIX_DELETED=false
 TARGET=""
+VERBOSE=false
 
 # Argument parsing
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help)
       usage
+      ;;
+    -v|--verbose)
+      VERBOSE=true
+      shift
       ;;
     -fn|--fix-new)
       FIX_NEW=true
@@ -82,6 +88,7 @@ fi
 # Output dir for report
 OD=$(readlink -m "./sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
 LOGFILE="$OD/report.log"
+VLOGFILE="$OD/report-verbose.log"
 INDIVIDUAL_MISSING_FILES_LIST="$OD/all-missing-files.txt"
 INDIVIDUAL_ADDED_FILES_LIST="$OD/all-new-files.txt"
 
@@ -89,6 +96,14 @@ mkdir -p "$OD" || { echo "Error: Failed to create output report directory '$OD'.
 
 log() {
   echo "$@" | tee -a "$LOGFILE"
+}
+
+vlog() {
+  if [ "$VERBOSE" = true ]; then
+    echo "$@" | tee -a "$VLOGFILE"
+  else
+    echo "$@" >> "$VLOGFILE"
+  fi
 }
 
 
@@ -133,45 +148,45 @@ process_checksum_file() {
   RFL="$RD/removed-file-list.txt"
   NCF="$RD/"$(basename "$CHECKSUMFILE")"-new"
 
-  log "=============================================================================================================="
-  log "="
-  log "= Processing checksum file $CT of $ALLCT: $CHECKSUMFILE"
-  log "="
-  log "= Individual report dir:           $RD"
-  log "="
-  log "= Checksum dir:                    $CD"
-  log "= Absolute checksum file:          $SRCDIR/$CHECKSUMFILE"
-  log "="
-  log "= File list:                       $FL"
-  log "= Original checksum file archive:  $OCF"
-  log "= Original checksum file lists:    $OCFFL"
-  log "= New file list:                   $NFL"
-  log "= Removed file list:               $RFL"
+  vlog "=============================================================================================================="
+  vlog "="
+  log  "= Processing checksum file $CT of $ALLCT: $CHECKSUMFILE"
+  vlog "="
+  vlog "= Individual report dir:           $RD"
+  vlog "="
+  vlog "= Checksum dir:                    $CD"
+  vlog "= Absolute checksum file:          $SRCDIR/$CHECKSUMFILE"
+  vlog "="
+  vlog "= File list:                       $FL"
+  vlog "= Original checksum file archive:  $OCF"
+  vlog "= Original checksum file lists:    $OCFFL"
+  vlog "= New file list:                   $NFL"
+  vlog "= Removed file list:               $RFL"
   if [ "$FIX_NEW" = true ] || [ "$FIX_DELETED" = true ]; then
-    log "= Updated checksum file:         $NCF"
+    vlog "= Updated checksum file:         $NCF"
   fi
-  log "="
-  log "=============================================================================================================="
-  log
+  vlog "="
+  vlog "=============================================================================================================="
+  vlog
 
   mkdir -p "$RD"
   echo "$CD" > "$RD/pwd.txt"
 
-  log "  Archive original checksum file to $OCF"
+  vlog "  Archive original checksum file to $OCF"
   cp -v "$CHECKSUMFILE" "$OCF" | sed -e 's/^/    /'
-  log "    file count in original checksum file: "$(wc -l < "$OCF")
+  vlog "    file count in original checksum file: "$(wc -l < "$OCF")
 
-  log "  Extract original checksum file list"
+  vlog "  Extract original checksum file list"
   cat "$CHECKSUMFILE" | sed -e 's/^[^ ]* .\(.*\)/\1/' | sort -u > "$OCFFL"
-  log "    unique file count listed:             "$(wc -l < "$OCFFL")
+  vlog "    unique file count listed:             "$(wc -l < "$OCFFL")
 
-  log "  List files"
+  vlog "  List files"
 
   cd "$CD"
   find -type f ! -name "all.sha1" ! -name "all.sha1-backup-*" | sort -u > "$FL"
-  log "    files found:                          "$(wc -l < "$OCFFL")
+  vlog "    files found:                          "$(wc -l < "$OCFFL")
 
-  log "  Calculate new / removed file lists"
+  vlog "  Calculate new / removed file lists"
 
   comm -23 "$FL" "$OCFFL" > "$NFL"
   comm -13 "$FL" "$OCFFL" > "$RFL"
@@ -186,7 +201,7 @@ process_checksum_file() {
     CT_REMOVED=$((CT_REMOVED+1))
     CT_TOTAL_MISSING_FILES=$((CT_TOTAL_MISSING_FILES+MISSING_FILES))
     CHANGE=true
-    log "  Files referenced in checksum but not found (removed on FS) count: $MISSING_FILES"
+    vlog "  Files referenced in checksum but not found (removed on FS) count: $MISSING_FILES"
 
     if [ "$FIX_DELETED" = true ]; then
       log "  Remove checksums for missing files"
@@ -206,7 +221,7 @@ process_checksum_file() {
           if (!(path in remove)) print $0
         }' "$RFL" "$OCF" > "$NCF"
     else
-      log "  No removal from checksum will be made."
+      vlog "  No removal from checksum will be made."
     fi
 
     log "  Missing files:"
@@ -215,7 +230,7 @@ process_checksum_file() {
       echo $(readlink -m "$REMOVEDFILE") >> "$INDIVIDUAL_MISSING_FILES_LIST"
     done < "$RFL"
   else
-    log "  No files removed from the FS"
+    vlog "  No files removed from the FS"
     if [ "$FIX_NEW" = true ] || [ "$FIX_DELETED" = true ]; then
       # New checksum file is not written when no fix is requested
       cp "$OCF" "$NCF"
@@ -228,7 +243,7 @@ process_checksum_file() {
     CT_ADDED=$((CT_ADDED+1))
     CT_TOTAL_ADDED_FILES=$((CT_TOTAL_ADDED_FILES+ADDED_FILES))
     CHANGE=true
-    log "  Added files found but missing from checksums (added on FS) count: $ADDED_FILES"
+    vlog "  Added files found but missing from checksums (added on FS) count: $ADDED_FILES"
 
     if [ "$FIX_NEW" = true ]; then
       log "  Calculate checksums for added files"
@@ -245,7 +260,7 @@ process_checksum_file() {
       done < "$NFL"
     fi
   else
-    log "  No files added to the FS"
+    vlog "  No files added to the FS"
   fi
   log
 
@@ -262,28 +277,35 @@ process_checksum_file() {
     CT_UNCHANGED=$((CT_UNCHANGED+1))
 
     if [ "$FIX_NEW" = true ] || [ "$FIX_DELETED" = true ]; then
-      log "  Checksum file is in sync with FS, no need to update"
+      vlog "  Checksum file is in sync with FS, no need to update"
     fi
   fi
 
-  log
-  log
-  log "  File count:                     "$(wc -l < "$FL")
-  log "  Original checksum entries:      "$(wc -l < "$OCF")
-  log "  Original checksum unique paths: "$(wc -l < "$OCFFL")
-  log "  Actual (new) file count:        "$(wc -l < "$NFL")
-  log "  Removed file count:             "$(wc -l < "$RFL")
+  vlog
+  vlog
+  vlog "  File count:                     "$(wc -l < "$FL")
+  vlog "  Original checksum entries:      "$(wc -l < "$OCF")
+  vlog "  Original checksum unique paths: "$(wc -l < "$OCFFL")
+  vlog "  Actual (new) file count:        "$(wc -l < "$NFL")
+  vlog "  Removed file count:             "$(wc -l < "$RFL")
   if [ "$FIX_MODE" = true ]; then
-    log "  New checksum entries:           "$(wc -l < "$NCF")
-    log "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
+    vlog "  New checksum entries:           "$(wc -l < "$NCF")
+    vlog "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
   fi
-  log
-  log "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
-  log "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
-  log "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
-  log
-  log
-  log
+  vlog
+
+  if [ "$CHANGE" = true ]; then
+    log  "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
+    log  "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
+    log  "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
+  else
+    vlog "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
+    vlog "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
+    vlog "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
+  fi
+  vlog
+  vlog
+  vlog
 }
 
 
@@ -297,7 +319,9 @@ log "** Do fix new files (calc checksum): $FIX_NEW"
 log "** Do fix deleted (remove checksum): $FIX_DELETEDS"
 log "** Target:                           $TARGET"
 log "** Output directory:                 $OD"
-log "** Logfile:                          $LOGFILE"
+log "** Log file:                         $LOGFILE"
+log "** Verbose log file:                 $VLOGFILE"
+log "**"
 log "** List of all checksum files:       $ALLCHECKSUMFILES"
 log "** List of new files:                $INDIVIDUAL_ADDED_FILES_LIST"
 log "** List of removed files:            $INDIVIDUAL_MISSING_FILES_LIST"
