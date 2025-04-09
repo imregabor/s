@@ -269,7 +269,7 @@ process_checksum_file() {
 
     if [ "$FIX_NEW" = true ] || [ "$FIX_DELETED" = true ]; then
       log "  Archive and overwrite"
-      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE.sha1-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/    /' | tee -a "$LOGFILE"
+      cp -v "$CHECKSUMFILE" "$CHECKSUMFILE-backup-$(date -u +%Y%m%d-%H%M%S)" | sed -e 's/^/    /' | tee -a "$LOGFILE"
       cp -v "$NCF" "$CHECKSUMFILE" | sed -e 's/^/    /' | tee -a "$LOGFILE"
     fi
 
