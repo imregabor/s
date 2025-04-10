@@ -78,7 +78,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$ODP" ]]; then
+if [[ -n "$ODP" ]]; then
   echo "Error: Log/report dir parent is not specified"
   echo
   usage
