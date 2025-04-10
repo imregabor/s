@@ -75,7 +75,8 @@ log() {
 # Procesed checksum file count
 CT=0
 # Number of checksum files with error(s)
-ERROR_COUNT=0
+FORMAT_ERROR_COUNT=0
+DUPES_ERROR_COUNT=0
 
 
 process_checksum_file() {
@@ -87,8 +88,17 @@ process_checksum_file() {
   log "Checking file $CT: $CHECKSUMFILE"
 
   if grep -av '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE" > /dev/null; then
-    ERROR_COUNT=$((ERROR_COUNT + 1))
-    log "  ** PROBLEM ($ERROR_COUNT) **"
+    FORMAT_ERROR_COUNT=$((FORMAT_ERROR_COUNT + 1))
+    log "  ** Formatting problem ($FORMAT_ERROR_COUNT) **"
+  fi
+
+  dupes=$(sed -E 's|^[^ ]* .(.*)|\1|' "$CHECKSUMFILE" | sort | uniq -d)
+  if [[ "$dupes" ]]; then
+    DUPES_ERROR_COUNT=$((DUPES_COUNT + 1))
+    log "  ** Duplicate paths problem ($DUPES_ERROR_COUNT) **"
+    while IFS= read -r DUPLICATE_PATH; do
+      log "    > $DUPLICATE_PATH"
+    done < <(echo "$dupes")
   fi
 }
 
@@ -122,8 +132,9 @@ log
 log
 log "=============================================================================================================="
 log "All done."
-log "  Checked checksum files: $CT"
-log "  Errors found:           $ERROR_COUNT"
+log "  Checked checksum files:              $CT"
+log "  Checksum files with format errors:   $FORMAT_ERROR_COUNT"
+log "  Checksum files with duplicate paths: $DUPES_ERROR_COUNT"
 log "=============================================================================================================="
 log
 log
