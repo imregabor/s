@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ODP="$1"
       shift
-      ;;;
+      ;;
     *)
       if [[ -z "$TARGET" ]]; then
         TARGET="$1"
