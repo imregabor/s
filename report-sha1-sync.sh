@@ -16,7 +16,7 @@ usage() {
   echo
   echo "Usage:"
   echo
-  echo "  $0 [-h] [-f] <TARGET_PATH>"
+  echo "  $0 [-h] [-fn] [-fd] [-ldb <DIRECTORY>] <TARGET_PATH>"
   echo
   echo "<TARGET_PATH> Target location:"
   echo
@@ -26,10 +26,11 @@ usage() {
   echo "  all hits will be processed."
   echo
   echo "Options:"
-  echo "  -h,  --help         Print this help and exit."
-  echo "  -v,  --verbose      Be more verbose. Note that verbose log file is always written."
-  echo "  -fn, --fix-new      Fix checksum file(s) in case of new file discrepancy - calculate checksum for new files."
-  echo "  -fd, --fix-deleted  Fix checksum file(s) in case of deleted file discrepancy - remove missing file from checksum."
+  echo "  -h,   --help           Print this help and exit."
+  echo "  -v,   --verbose        Be more verbose. Note that verbose log file is always written."
+  echo "  -fn,  --fix-new        Fix checksum file(s) in case of new file discrepancy - calculate checksum for new files."
+  echo "  -fd,  --fix-deleted    Fix checksum file(s) in case of deleted file discrepancy - remove missing file from checksum."
+  echo "  -ldp, --log-dir-parent Parent dir for log / report directory. By default make log / report dir in current dir."
   echo
   exit 1
 }
@@ -39,6 +40,7 @@ FIX_NEW=false
 FIX_DELETED=false
 TARGET=""
 VERBOSE=false
+ODP=$(readlink -m ".")
 
 # Argument parsing
 while [[ $# -gt 0 ]]; do
@@ -58,6 +60,11 @@ while [[ $# -gt 0 ]]; do
       FIX_DELETED=true
       shift
       ;;
+    -ldp|--log-dir-parent)
+      shift
+      ODP="$1"
+      shift
+      ;;;
     *)
       if [[ -z "$TARGET" ]]; then
         TARGET="$1"
@@ -70,6 +77,18 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -z "$ODP" ]]; then
+  echo "Error: Log/report dir parent is not specified"
+  echo
+  usage
+fi
+
+if [[ ! -d "$ODP" ]]; then
+  echo "Error: Log/report dir parent is not found: $ODP"
+  echo
+  usage
+fi
 
 # Ensure target is provided
 if [[ -z "$TARGET" ]]; then
@@ -86,7 +105,7 @@ if [[ ! -e "$TARGET" ]]; then
 fi
 
 # Output dir for report
-OD=$(readlink -m "./sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
+OD=$(readlink -m "$ODP/sha1-checksum-consistency-report-$(date -u +%Y%m%d-%H%M%S)")
 LOGFILE="$OD/report.log"
 VLOGFILE="$OD/report-verbose.log"
 INDIVIDUAL_MISSING_FILES_LIST="$OD/all-missing-files.txt"
@@ -292,18 +311,20 @@ process_checksum_file() {
     vlog "  New checksum entries:           "$(wc -l < "$NCF")
     vlog "  New checksum unique path count: "$(sed -e 's/^[^ ]* .\(.*\)/\1/' "$NCF" | sort -u | wc -l)
   fi
-  vlog
 
   if [ "$CHANGE" = true ]; then
+    log
     log  "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
     log  "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
     log  "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
+    log
   else
+    vlog
     vlog "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
     vlog "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
     vlog "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
+    vlog
   fi
-  vlog
   vlog
   vlog
 }
@@ -319,6 +340,7 @@ log "** Do fix new files (calc checksum): $FIX_NEW"
 log "** Do fix deleted (remove checksum): $FIX_DELETEDS"
 log "** Target:                           $TARGET"
 log "** Output directory:                 $OD"
+log "** Parent of output directory:       $ODP"
 log "** Log file:                         $LOGFILE"
 log "** Verbose log file:                 $VLOGFILE"
 log "**"
@@ -372,9 +394,13 @@ else
   exit 1
 fi
 
+log
+log
 log "=============================================================================================================="
 log "All done."
 log "  Valid checksum files so far: $CT_UNCHANGED, invalid: $CT_CHANGED, +: $CT_ADDED, -: $CT_REMOVED"
 log "    Individual missing files referenced in checksums so far: $CT_TOTAL_MISSING_FILES"
 log "    Infividual new files not referenced in checksums so far: $CT_TOTAL_ADDED_FILES"
 log "=============================================================================================================="
+log
+log
