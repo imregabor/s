@@ -22,7 +22,7 @@ usage() {
   echo
   echo "  If points to a checksum file it will be checked."
   echo
-  echo "  If points to a directory it will be searched for \"all.sha\" files,"
+  echo "  If points to a directory it will be searched for \"all.sha1\" files,"
   echo "  all hits will be processed."
   echo
   echo "Options:"
