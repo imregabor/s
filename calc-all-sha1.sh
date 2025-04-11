@@ -16,10 +16,12 @@ echo
 
 TFS=""
 FCE=$(find -type f | head -500001 | wc -l)
+TFL=""
 if [ "$FCE" == "500001" ] ; then
   echo "  > 500k files"
 else
   TFS=$(du -h --apparent-size --summarize | cut -f 1)
+  TFL=" (of $FCE)"
   echo "  Total file count: $FCE"
   echo "  Total file sizes: $TFS"
 fi
@@ -64,7 +66,7 @@ while read line ; do
   sha1sum -b "$line" >> "$OF_INPROGRESS"
   CT=$(( CT + 1 ))
   if [ $(( CT % 100 )) == 0 ] || [ "$CT" -lt 100 ] ; then
-    echo "  processed $CT files so far"
+    echo "  processed $CT$TFL files so far"
   fi
 done < <(find . -type f | grep -v "$OF_INPROGRESS")
 
