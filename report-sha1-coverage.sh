@@ -16,13 +16,14 @@ usage() {
   echo
   echo "Usage:"
   echo
-  echo "  $0 [-h] [-v] [-ldb <DIRECTORY>] <CHECK_ROOT_DIRECTORY>"
+  echo "  $0 [-h] [-v] [-vv] [-ldb <DIRECTORY>] <CHECK_ROOT_DIRECTORY>"
   echo
   echo "<CHECK_ROOT_DIRECTORY> Directory to check."
   echo
   echo "Options:"
   echo "  -h,   --help           Print this help and exit."
   echo "  -v,   --verbose        Be more verbose. Note that verbose log file is always written."
+  echo "  -vv,  --very-verbose   Be more verbose and print (on verbose level) even further details. Implies -v."
   echo "  -ldp, --log-dir-parent Parent dir for log / report directory. By default make log / report dir in current dir."
   echo
   exit 1
@@ -31,6 +32,7 @@ usage() {
 # Default values
 TARGET=""
 VERBOSE=false
+VERYVERBOSE=false
 ODP=$(readlink -m ".")
 
 # Argument parsing
@@ -42,6 +44,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -v|--verbose)
       VERBOSE=true
+      shift
+      ;;
+    -vv|--very-verbose)
+      VERBOSE=true
+      VERYVERBOSE=true
       shift
       ;;
     -ldp|--log-dir-parent)
@@ -126,6 +133,9 @@ log "** Output directory:                 $OD"
 log "** Parent of output directory:       $ODP"
 log "** Log file:                         $LOGFILE"
 log "** Verbose log file:                 $VLOGFILE"
+if [[ "$VERYVERBOSE" == true ]]; then
+  log "** Very Verbose details will be printed"
+fi
 log "**"
 log "** List of all checksum files:       $ALLCHECKSUMFILES"
 log "** List of all directories:          $ALLDIRECTORIES"
@@ -161,8 +171,16 @@ mapfile -t ALL_DIRS < "$ALLDIRECTORIES"
 
 is_covered_by_checksum() {
   local dir="$1"
+  if [[ "$VERYVERBOSE" == true ]]; then
+    vlog "    Check coverage status of directory \"$dir\""
+  fi
+
   for covered_dir in "${COVERED_DIRS[@]}"; do
     if [[ "$dir" = "$covered_dir" || "$dir" == "$covered_dir/"* ]]; then
+      if [[ "$VERYVERBOSE" == true ]]; then
+        vlog "        covered by directory \"$covered_dir\""
+      fi
+
       return 0
     fi
   done
@@ -187,9 +205,17 @@ if [[ "${#UNCOVERED[@]}" -eq 0 ]]; then
 else
   log "  Total uncovered directories: $UNCOVERED_COUNT"
   log
+  if [[ "$VERYVERBOSE" == true ]]; then
+    vlog
+    for uncovered_dir in "${UNCOVERED[@]}"; do
+      vlog "    Uncovered: \"$uncovered_dir\""
+    done
+    vlog
+  fi
 
 
-  log "Checking for uncovered dirs with covered sibling"
+  
+  log "Checking for uncovered dirs with covered sibling. These are recommended candidates for further checksum calculation."
   for uncovered_dir in "${UNCOVERED[@]}"; do
     if [[ "$uncovered_dir" == "." ]]; then
       continue
@@ -205,7 +231,7 @@ else
   done
   log
 
-  log "Highest level uncovered directories"
+  log "Highest level uncovered directories. Generating here might cover checksum files deeper."
   while IFS= read -r DIR ; do
     NR_UNCOVERED_COUNT=$((NR_UNCOVERED_COUNT + 1))
     log "  $(readlink -m "$TARGET/$DIR")"
