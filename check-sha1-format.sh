@@ -2,6 +2,12 @@
 #
 # Check SHA1 file for formatting errors
 #
+# This check is stricter than the possible valid outputs emitted (and consumed) by sha1sum.
+# Output conventions described at https://www.gnu.org/software/coreutils/manual/html_node/cksum-output-modes.html apply:
+# When file name contains backslash, newline or carriage return characters, sha1sum will start
+# the checksum line with a backslash, and uses it for escaping characters in the path part.
+#
+# These escaped checksum lines are reported as format errors by this tool.
 #
 
 set -e
