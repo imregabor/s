@@ -89,7 +89,13 @@ process_checksum_file() {
 
   if grep -av '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE" > /dev/null; then
     FORMAT_ERROR_COUNT=$((FORMAT_ERROR_COUNT + 1))
+    log
     log "  ** Formatting problem ($FORMAT_ERROR_COUNT) **"
+    log
+    while IFS= read -r LINE; do
+      log "    > $LINE"
+    done < <(grep -anv '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE")
+    log
   fi
 
   dupes=$(sed -E 's|^[^ ]* .(.*)|\1|' "$CHECKSUMFILE" | sort | uniq -d)
