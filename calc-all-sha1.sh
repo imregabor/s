@@ -66,7 +66,7 @@ while read line ; do
   sha1sum -b "$line" >> "$OF_INPROGRESS"
   CT=$(( CT + 1 ))
   if [ $(( CT % 100 )) == 0 ] || [ "$CT" -lt 100 ] ; then
-    echo "  processed $CT$TFL files so far"
+    echo "  processed $CT$TFL files so far (last file: $line)"
   fi
 done < <(find . -type f | grep -v "$OF_INPROGRESS")
 

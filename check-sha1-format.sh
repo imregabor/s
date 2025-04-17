@@ -9,6 +9,9 @@
 #
 # These escaped checksum lines are reported as format errors by this tool.
 #
+# To find offending files use
+#
+#  LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
 
 set -e
 
@@ -133,7 +136,7 @@ elif [[ -d "$TARGET" ]]; then
 
   while IFS= read -r CHECKSUMFILE ; do
     process_checksum_file "$CHECKSUMFILE"
-  done < <(find -type f -wholename '*/all.sha1')
+  done < <(LC_ALL=C find -type f -wholename '*/all.sha1')
 
 else
   echo "Error: Target '$TARGET' is neither a file nor a directory."

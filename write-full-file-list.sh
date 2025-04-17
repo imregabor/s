@@ -4,10 +4,12 @@
 #
 #
 
-TS=$(date -Iseconds)
+# TS=$(date -Iseconds)
+TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 LOF="./all-${TS}.filelist"
 SOF="./all-${TS}.sha1"
 LSR="./all-${TS}.lsr"
+DUF="./all-${TS}.du"
 
 echo "Create full file list to $LOF"
 echo
@@ -16,9 +18,9 @@ CT=0
 while read line ; do
   CT=$(( CT + 1 ))
   if [ $(( CT % 1000 )) == 0 ] ; then
-    echo "  listed $CT files so far"
+    echo "  listed $CT files so far (last file: \"$line\")"
   fi
-done < <(find . -type f | grep -v "^\./\$RECYCLE.BIN" | grep -v "^\./System Volume Information" | tee "$LOF" )
+done < <(find . -type f | grep -av "^\./\$RECYCLE.BIN" | grep -av "^\./System Volume Information" | tee "$LOF" )
 echo "  listing done; listed file count: $CT."
 echo
 
@@ -48,10 +50,15 @@ while read line ; do
   }" >> "$SOF"
 
 
-done < <(cat "$LOF" | grep "\.sha1$")
+done < <(cat "$LOF" | grep -av "\.sha1$")
+
+echo "Collect DU report"
+du --apparent-size -b > "$DUF"
 
 sha1sum -b "$LOF" >> "$SOF"
 sha1sum -b "$LSR" >> "$SOF"
+sha1sum -b "$DUF" >> "$DUF"
+
 
 echo
 echo
@@ -59,8 +66,9 @@ echo
 echo "All done, stats:"
 echo
 echo
-echo "Number of lines in $SOF (all checksums, might contain duplicates): "$(wc -l "$SOF")
-echo "Number of lines in $LSR (recursive directory list): "$(wc -l "$LSR")
-echo "Number of lines in $LOF (all files listed): "$(wc -l "$LOF")
+echo "Number of lines in $SOF (all checksums, might contain duplicates): "$(wc -l < "$SOF")
+echo "Number of lines in $LSR (recursive directory list): "$(wc -l < "$LSR")
+echo "Number of lines in $LOF (all files listed): "$(wc -l < "$LOF")
+echo "Number of lines in $DUF (DU report): $(wc -l < "$DUF")"
 echo
 echo
