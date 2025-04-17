@@ -68,7 +68,7 @@ while read line ; do
   if [ $(( CT % 100 )) == 0 ] || [ "$CT" -lt 100 ] ; then
     echo "  processed $CT$TFL files so far (last file: $line)"
   fi
-done < <(find . -type f | grep -v "$OF_INPROGRESS")
+done < <(find . -type f | grep -av "$OF_INPROGRESS")
 
 echo
 echo "  rename $OF_INPROGRESS to $OF"

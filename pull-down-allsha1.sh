@@ -19,7 +19,7 @@ fi
 
 SUMFILECT=0
 SUMLINECT=0
-
+LC_ALL=C
 
 PREFIX="$(readlink -m "$PWD")"
 PREFIX="$(basename "$PREFIX")/"
@@ -32,7 +32,7 @@ while [ "$PWD" != "/" ]; do
     echo "  found:  $INFILE"
     echo "  prefix: $PREFIX"
     echo
-    grep -F "$PREFIX" "$INFILE" |
+    grep -aF "$PREFIX" "$INFILE" |
       awk -v prefix="$PREFIX" '{ i = index($0, prefix); print substr($0, 0, i) substr($0, i + length(prefix) - 1);   }' > "$OFTMP"
     echo "  rename $OFTMP -> $OF"
     mv "$OFTMP" "$OF"
