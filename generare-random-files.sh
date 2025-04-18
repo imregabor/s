@@ -41,7 +41,7 @@ while true ; do
     tee "$FILENAME" | \
     sha1sum -b | \
     sed -e 's/-/\.\/'$FILENAME'/' | \
-    tee "$$CHECKSUMFILE" >> ./all.sha1
+    tee "$CHECKSUMFILE" >> ./all.sha1
 
   echo
 
