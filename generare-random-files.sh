@@ -17,13 +17,13 @@ COUNT=0
 TOTAL=0
 START=$(date +%s)
 
-trap 'echo; echo "Interrupted after completing $((TOTAL / (1024*1024))) MB of writes."; exit 0' INT
+trap 'echo; echo "Interrupted after completing $((TOTAL / (1024*1024))) MiB of writes."; exit 0' INT
 
 while true ; do
 
   COUNT=$((COUNT + 1))
   FILENAME=$(printf '%04d.bin' $COUNT)
-  echo "["$(date)"] Writing 100M random file $COUNT (in 10M blocks) to $FILENAME"
+  echo "["$(date)"] Writing 100 MiB random file $COUNT (in 10 MiB blocks) to $FILENAME"
   echo
 
   dd if=/dev/urandom bs=$((10*1024*1024)) count=10 2> >(sed -e 's/^/    /' >&2) | \
@@ -40,9 +40,9 @@ while true ; do
   if [ "$ELAPSED" -eq 0 ]; then
     TP=""
   else
-    TP=", throughput: $((TOTAL / (1024*1024*ELAPSED))) MB/s"
+    TP=", throughput: $((TOTAL / (1024*1024*ELAPSED))) MiB/s"
   fi
 
-  echo "    Elapsed $ELAPSED secs$TP"
+  echo "    Elapsed $ELAPSED s, written $((TOTAL / (1024*1024))) MiB$TP"
   echo
 done
