@@ -37,22 +37,43 @@ last_bytes=0
 
 expected_count=$(echo "$sha1_file_content" | wc -l)
 
+human_readable_size() {
+  local size="$1"
+
+  if [[ "$size" == "?" ]]; then
+    echo "? B"
+    return
+  fi
+
+  local -a suffixes=("B" "KiB" "MiB" "GiB" "TiB" "PiB")
+  local i=0
+  local float_size="$size"
+  local rounded_size="$size"
+
+  while (( rounded_size >= 1024 && i < ${#suffixes[@]} - 1 )); do
+    float_size=$(awk "BEGIN {printf \"%.2f\", $float_size/1024}")
+    rounded_size=$(( rounded_size / 1024 ))
+    ((i++))
+  done
+
+  echo "$float_size ${suffixes[i]}"
+}
 
 echo
 echo
-echo "=============================================================================================================="
+echo "========================================================================================================================================"
 echo
 echo "Check SHA1 sums from $SHA1_FILE"
 echo
 echo "Expected checks: $expected_count"
 echo
-echo "=============================================================================================================="
+echo "========================================================================================================================================"
 echo
 echo
 
 while IFS= read -r line; do
   ((total_files++))
-sleep 1
+
   sha1_output=$(echo "$line" | sha1sum -c 2>&1)
   sha1_status=$?
   sha1_output=$(echo "$sha1_output" | grep -v "^sha1sum: ")
@@ -95,20 +116,22 @@ sleep 1
   last_elapsed=$((current_time - last_time))
   last_time=$current_time
 
-  current_mibps='?'
-  avg_mibps='?'
+  current_bps='?'
+  avg_bps='?'
 
   if (( last_elapsed > 0 && sha1_status == 0 )); then
-      current_mibps=$(awk "BEGIN { printf \"%.2f\", $file_size / 1048576 / $last_elapsed }")
+      current_bps=$(( file_size / last_elapsed ))
   fi
 
   if (( elapsed > 0 )); then
-      avg_mibps=$(awk "BEGIN { printf \"%.2f\", $total_bytes / 1048576 / $elapsed }")
+      avg_bps=$(( total_bytes / elapsed ))
   fi
 
-  printf "[%5d s] %5d/%d: %s (%12s B, %8s MiB / s), passed %5d, failed %d, total passed %12s B %8s MiB / s | %s\n" \
-    "$elapsed" "$total_files" "$expected_count" "$check_result" "$file_size" "$current_mibps" \
-    "$pass_count" "$error_count" "$total_bytes" "$avg_mibps" "$sha1_output"
+  printf "[%5d s] %5d/%d: %s (%11s, %11s/s), passed %5d, failed %d, total passed %11s %11s/s | %s\n" \
+    "$elapsed" "$total_files" "$expected_count" "$check_result" \
+    "$(human_readable_size "$file_size")" "$(human_readable_size "$current_bps")" \
+    "$pass_count" "$error_count" \
+    "$(human_readable_size "$total_bytes")" "$(human_readable_size "$avg_bps")" "$sha1_output"
 
 
 done < <(echo "$sha1_file_content")
@@ -116,22 +139,22 @@ done < <(echo "$sha1_file_content")
 end_time=$(date +%s)
 total_time=$((end_time - start_time))
 if (( total_time > 0 )); then
-  final_avg_mibps=$(awk "BEGIN { printf \"%.2f\", $total_bytes / 1048576 / $total_time }")
+  final_avg_bps=$(( total_bytes / total_time ))
 else
-  final_avg_mibps='?'
+  final_avg_bps='?'
 fi
 
 echo
 echo
-echo "=============================================================================================================="
+echo "========================================================================================================================================"
 echo "All done:"
 echo
 echo "Total files checked: $total_files"
 echo "Passed:              $pass_count"
 echo "Failed:              $error_count"
-echo "Total size:          $total_bytes B"
+echo "Total size:          $(human_readable_size "$total_bytes")"
 echo "Total time:          ${total_time} s"
-echo "Average bandwidth:   $final_avg_mibps MiB/s"
-echo "=============================================================================================================="
+echo "Average bandwidth:   $(human_readable_size "$final_avg_bps")/s"
+echo "========================================================================================================================================"
 echo
 echo
