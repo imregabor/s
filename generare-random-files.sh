@@ -9,8 +9,7 @@
 set -e
 
 if [ -e "./all.sha1" ]; then
-  echo "ERROR! ./all.sha1 exists"
-  exit 1
+  echo "WARNING! ./all.sha1 exists, will not overwrite existing binary files"
 fi
 
 COUNT=0
@@ -23,14 +22,26 @@ while true ; do
 
   COUNT=$((COUNT + 1))
   FILENAME=$(printf '%04d.bin' $COUNT)
-  echo "["$(date)"] Writing 100 MiB random file $COUNT (in 10 MiB blocks) to $FILENAME"
+  CHECKSUMFILE="$FILENAME.sha1"
+
+  if [ -e "$FILENAME" ]; then
+    echo "ERROR! $FILENAME exists"
+    exit 1
+  fi
+
+  if [ -e "$CHECKSUMFILE" ]; then
+    echo "ERROR! $CHECKSUMFILE exists"
+    exit 1
+  fi
+
+  echo "["$(date)"] Writing 100 MiB random file $COUNT (in 10 MiB blocks) to $FILENAME, checksum to $CHECKSUMFILE"
   echo
 
   dd if=/dev/urandom bs=$((10*1024*1024)) count=10 2> >(sed -e 's/^/    /' >&2) | \
     tee "$FILENAME" | \
     sha1sum -b | \
     sed -e 's/-/\.\/'$FILENAME'/' | \
-    tee "$FILENAME.sha1" >> ./all.sha1
+    tee "$$CHECKSUMFILE" >> ./all.sha1
 
   echo
 
