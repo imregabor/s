@@ -5,7 +5,9 @@
 # Detailed progress and throughput logging.
 #
 
+
 SHA1_FILE="${1:-all.sha1}"
+start_date=$(date)
 
 if [[ "$SHA1_FILE" == "-h" || "$SHA1_FILE" == "--help" ]]; then
     echo -e "Usage: $0 [sha1_file]"
@@ -144,6 +146,8 @@ else
   final_avg_bps='?'
 fi
 
+end_date=$(date)
+
 echo
 echo
 echo "========================================================================================================================================"
@@ -155,6 +159,8 @@ echo "Failed:              $error_count"
 echo "Total size:          $(human_readable_size "$total_bytes")"
 echo "Total time:          ${total_time} s"
 echo "Average bandwidth:   $(human_readable_size "$final_avg_bps")/s"
+echo "Start date:          $start_date"
+echo "End date:            $end_date"
 echo "========================================================================================================================================"
 echo
 echo
