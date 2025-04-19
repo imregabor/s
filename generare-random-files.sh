@@ -18,8 +18,9 @@ START=$(date +%s)
 last_time="$START"
 files_written=0
 block_size=$(( 10 * 1024 * 1024 ))
+min_block_size=$(( 32 * 1024 ))
 block_count=10
-bytes_to_write=0
+bytes_to_write=0 # use 0 for no bound on data
 single_file_size=$(( block_size * block_count ))
 
 human_readable_size() {
@@ -52,7 +53,21 @@ while true ; do
   if (( bytes_to_write > 0 && TOTAL + single_file_size > bytes_to_write )); then
     echo
     echo "Already written $(human_readable_size "$TOTAL"), target $(human_readable_size "$bytes_to_write"), cannot write next file of $(human_readable_size "$single_file_size")"
-    break
+    echo
+    echo "  Adjust file size, using min block size $min_block_size ($(human_readable_size "$min_block_size"))"
+
+    block_size="$min_block_size"
+    block_count=$(( (bytes_to_write - TOTAL) / block_size ))
+    single_file_size=$(( block_size * block_count ))
+
+    if (( block_count > 0 )); then
+      echo "  Attempt to write $block_count blocks"
+      echo
+    else
+      echo "  No more blocks fit with minimal block size, exiting"
+      echo
+      break
+    fi
   fi
 
   (( COUNT ++ )) || :
