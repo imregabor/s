@@ -96,7 +96,7 @@ while true ; do
   if (( last_elapsed_time > 0 )); then
    last_bps=$(( last_bytes / last_elapsed_time ))
   else
-    last_bps="? B"
+    last_bps="?"
   fi
 
 
