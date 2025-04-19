@@ -129,9 +129,9 @@ while IFS= read -r line; do
       avg_bps=$(( total_bytes / elapsed ))
   fi
 
-  printf "[%5d s] %5d/%d: %s (%11s, %11s/s), passed %5d, failed %d, total passed %11s %11s/s | %s\n" \
+  printf "[%5d s] %5d/%d: %s (%11s, %4s s, %11s/s), passed %5d, failed %d, total passed %11s %11s/s | %s\n" \
     "$elapsed" "$total_files" "$expected_count" "$check_result" \
-    "$(human_readable_size "$file_size")" "$(human_readable_size "$current_bps")" \
+    "$(human_readable_size "$file_size")" "$last_elapsed" "$(human_readable_size "$current_bps")" \
     "$pass_count" "$error_count" \
     "$(human_readable_size "$total_bytes")" "$(human_readable_size "$avg_bps")" "$sha1_output"
 
