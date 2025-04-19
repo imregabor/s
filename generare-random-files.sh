@@ -15,9 +15,10 @@ fi
 COUNT=0
 TOTAL=0
 START=$(date +%s)
+last_time="$START"
 files_written=0
-block_size=$(( 1024 * 1024 * 10 ))
-block_count=1
+block_size=$(( 10 * 1024 * 1024 ))
+block_count=10
 bytes_to_write=0
 single_file_size=$(( block_size * block_count ))
 
@@ -33,7 +34,6 @@ human_readable_size() {
   local i=0
   local float_size="$size"
   local rounded_size="$size"
-
   while (( rounded_size >= 1024 && i < ${#suffixes[@]} - 1 )); do
     float_size=$(awk "BEGIN {printf \"%.2f\", $float_size/1024}")
     rounded_size=$(( rounded_size / 1024 ))
@@ -44,7 +44,7 @@ human_readable_size() {
 }
 
 
-trap 'echo; echo "Interrupted after completing $(files_written) files, $(human_readable_size "$TOTAL")."; exit 0' INT
+trap 'echo; echo "Interrupted after completing $files_written files, $(human_readable_size "$TOTAL")."; exit 0' INT
 
 
 while true ; do
@@ -90,13 +90,23 @@ while true ; do
   NOW=$(date +%s)
   TOTAL=$((TOTAL + last_bytes))
   ELAPSED=$((NOW - START))
+  last_elapsed_time=$((NOW - last_time))
+  last_time="$NOW"
+
+  if (( last_elapsed_time > 0 )); then
+   last_bps=$(( last_bytes / last_elapsed_time ))
+  else
+    last_bps="? B"
+  fi
+
+
   if [ "$ELAPSED" -eq 0 ]; then
     TP=""
   else
     TP=", throughput: $(human_readable_size "$((TOTAL / ELAPSED))")/s"
   fi
 
-  echo "    Elapsed $ELAPSED s, written $(human_readable_size $"last_bytes"), total $(human_readable_size "$TOTAL")$TP"
+  echo "    [$ELAPSED s], written $(human_readable_size "$last_bytes") in $last_elapsed_time s ($(human_readable_size "$last_bps")/s), total $(human_readable_size "$TOTAL")$TP"
   echo
 
 
