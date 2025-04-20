@@ -70,9 +70,14 @@ while read line ; do
   fi
 done < <(find . -type f | grep -av "$OF_INPROGRESS")
 
-echo
-echo "  rename $OF_INPROGRESS to $OF"
-mv "$OF_INPROGRESS" "$OF"
+
+if (( CT > 0 )); then
+  echo
+  echo "  rename $OF_INPROGRESS to $OF"
+  mv "$OF_INPROGRESS" "$OF"
+else
+  echo "  No files found"
+fi
 
 T1=$(date +%s)
 DT=$(($T1 - $T0))
