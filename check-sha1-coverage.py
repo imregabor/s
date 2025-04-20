@@ -30,6 +30,7 @@ def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=Fa
   checksum_file_path=os.path.join(dir_path, filename)
   found = os.path.isfile(checksum_file_path)
   found_covered_ret = found
+  found_file_ret = False
 
   if found:
     found_count += 1
@@ -53,25 +54,34 @@ def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=Fa
 
   try:
     dir_entries = os.scandir(dir_path)
-    uncovered_paths = []
+    uncovered_subdirs = []
+    uncovered_files = []
 
     for entry in dir_entries:
       if entry.is_dir(follow_symlinks=False):
-        found_covered = visit_dir(entry.path, filename, coverage_count, is_root=False, ignore_root=ignore_root, uncovered_need_report=uncovered_need_report)
+        found_covered, found_file = visit_dir(entry.path, filename, coverage_count, is_root=False, ignore_root=ignore_root, uncovered_need_report=uncovered_need_report)
         found_covered_ret = found_covered_ret or found_covered
+        found_file_ret = found_file_ret or found_file
 
-        if (coverage_count == 0) and (not found_covered):
-          uncovered_paths.append(entry.path)
+        if (coverage_count == 0) and (not found_covered) and found_file:
+          uncovered_subdirs.append(entry.path)
+
+      if entry.is_file():
+        found_file_ret = True
+        if coverage_count == 0:
+          uncovered_files.append(entry.path)
 
 
-    if uncovered_paths and found_covered_ret:
-      for dir_path in uncovered_paths:
+    if found_covered_ret:
+      for dir_path in uncovered_subdirs:
         print(f'Uncovered directory [*] {dir_path}')
+      for file_path in uncovered_files:
+        print(f'Uncovered file:         {file_path}')
 
   except PermissionError as e:
     print(f'PermissionError at: {dir_path}: {e}')
 
-  return found_covered_ret
+  return found_covered_ret, found_file_ret
 
 
 def main():
