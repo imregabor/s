@@ -27,7 +27,7 @@ def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=Fa
   current_path = dir_path
   visited_dirs += 1
 
-  checksum_file_path=os.path.isfile(os.path.join(dir_path, filename))
+  checksum_file_path=os.path.join(dir_path, filename)
   found = os.path.isfile(checksum_file_path)
   found_covered_ret = found
 
