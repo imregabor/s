@@ -50,7 +50,7 @@ while read line ; do
   }" >> "$SOF"
 
 
-done < <(cat "$LOF" | grep -av "\.sha1$")
+done < <(cat "$LOF" | grep -a "\.sha1$")
 
 echo "Collect DU report"
 du --apparent-size -b > "$DUF"
