@@ -9,7 +9,7 @@ echo "================================================================="
 echo
 echo "Calc SHA1 checksums"
 echo
-echo "Launched in `pwd`"
+echo "Launched in $(pwd)"
 echo
 echo "================================================================="
 echo
@@ -19,25 +19,23 @@ echo
 OF=$(readlink -m "./all.sha1")
 OF_INPROGRESS=$(readlink -m "./all.sha1-inprogress")
 
-if [ ! -z "$1" ] ; then
-  OF=$(readlink -m "$OF")
-  OF_INPROGRESS=$(readlink -m "$OF_INPROGRESS")
+if [ -n "$1" ] ; then
   echo "Will cd to \"$1\" for file listing (write all.sha1 in original wd)"
   echo "  OF:            \"$OF\""
   echo "  OF_INPROGRESS: \"$OF_INPROGRESS\""
   echo
   echo
-  cd "$1"
+  cd "$1" || { echo "ERROR! Failed to cd to '$1'"; exit 1; }
 fi
 
 if [ -f "$OF_INPROGRESS" ] ; then
   echo "$OF_INPROGRESS exists; exiting."
-  exit -1
+  exit 1
 fi
 
 if [ -f "$OF" ] ; then
   echo "$OF exists; exiting."
-  exit -1
+  exit 1
 fi
 
 
@@ -103,13 +101,21 @@ CT=0
 T0=$(date +%s)
 
 # see https://stackoverflow.com/questions/13726764/while-loop-subshell-dilemma-in-bash
-while read line ; do
+while IFS= read -r line ; do
   sha1sum -b "$line" >> "$OF_INPROGRESS"
   CT=$(( CT + 1 ))
   if [ $(( CT % 100 )) == 0 ] || [ "$CT" -lt 100 ] ; then
-    echo "  processed $CT$TFL files so far (last file: $line)"
+
+    t_now=$(date +%s)
+    dt=$((t_now - T0))
+    throughput=""
+    if [[ "$dt" -gt 0 ]]; then
+      throughput=" ($(( CT / dt )) files / s)"
+    fi
+
+    echo "  [$dt s] processed $CT$TFL files$throughput (last file: $line)"
   fi
-done < <(find . -type f | grep -av "$OF_INPROGRESS")
+done < <(find . -type f ! -name "$(basename "$OF_INPROGRESS")")
 
 
 if (( CT > 0 )); then
@@ -121,7 +127,7 @@ else
 fi
 
 T1=$(date +%s)
-DT=$(($T1 - $T0))
+DT=$((T1 - T0))
 
 echo
 echo
@@ -137,6 +143,7 @@ echo "Total time:       $DT s"
 
 if [[ "$DT" -gt 0 && "$TFS" != "" ]]; then
   echo "Throughput:       $(human_readable_size $(( TFSB / DT ))) / s"
+  echo "                  $(( CT / DT )) files / s"
 fi
 
 echo
