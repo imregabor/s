@@ -21,7 +21,7 @@ def stats_logger(interval=1):
     print(f'Visited {visited_dirs} dirs, found {found_count} checksum files, currently at {current_path}')
 
 
-def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=False, uncovered_need_report=True):
+def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=False, uncovered_need_report=True, no_multi_coverage=False):
   global visited_dirs, current_path, found_count
 
   current_path = dir_path
@@ -37,6 +37,9 @@ def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=Fa
 
     if is_root and ignore_root:
       print(f'Checksum found in search root, will be ignored from multiple coverage report {checksum_file_path}')
+    elif no_multi_coverage:
+      # not-ignored checksum file, no multiple coverage requested, can stop descending
+      return False, False
 
     if not (is_root and ignore_root):
       uncovered_need_report=True
@@ -53,30 +56,30 @@ def visit_dir(dir_path, filename, coverage_count=0, is_root=True, ignore_root=Fa
       uncovered_need_report=False
 
   try:
-    dir_entries = os.scandir(dir_path)
-    uncovered_subdirs = []
-    uncovered_files = []
+    with os.scandir(dir_path) as dir_entries:
+      uncovered_subdirs = []
+      uncovered_files = []
 
-    for entry in dir_entries:
-      if entry.is_dir(follow_symlinks=False):
-        found_covered, found_file = visit_dir(entry.path, filename, coverage_count, is_root=False, ignore_root=ignore_root, uncovered_need_report=uncovered_need_report)
-        found_covered_ret = found_covered_ret or found_covered
-        found_file_ret = found_file_ret or found_file
+      for entry in dir_entries:
+        if entry.is_dir(follow_symlinks=False):
+          found_covered, found_file = visit_dir(entry.path, filename, coverage_count, is_root=False, ignore_root=ignore_root, uncovered_need_report=uncovered_need_report, no_multi_coverage=no_multi_coverage)
+          found_covered_ret = found_covered_ret or found_covered
+          found_file_ret = found_file_ret or found_file
 
-        if (coverage_count == 0) and (not found_covered) and found_file:
-          uncovered_subdirs.append(entry.path)
+          if (coverage_count == 0) and (not found_covered) and found_file:
+            uncovered_subdirs.append(entry.path)
 
-      if entry.is_file():
-        found_file_ret = True
-        if coverage_count == 0:
-          uncovered_files.append(entry.path)
+        if entry.is_file():
+          found_file_ret = True
+          if coverage_count == 0:
+            uncovered_files.append(entry.path)
 
 
-    if found_covered_ret:
-      for dir_path in uncovered_subdirs:
-        print(f'Uncovered directory [*] {dir_path}')
-      for file_path in uncovered_files:
-        print(f'Uncovered file:         {file_path}')
+      if found_covered_ret:
+        for dir_path in uncovered_subdirs:
+          print(f'Uncovered directory [*] {dir_path}')
+        for file_path in uncovered_files:
+          print(f'Uncovered file:         {file_path}')
 
   except PermissionError as e:
     print(f'PermissionError at: {dir_path}: {e}')
@@ -103,6 +106,11 @@ def main():
     help='Ignore direct root coverage for deeper dirs.'
   )
 
+  parser.add_argument(
+    '-n', '--no-multi-coverage', action='store_true',
+    help='Do not report multiple coverage, stop traversing on the first not-ignored checksum.'
+  )
+
   args = parser.parse_args()
 
   print(f'Starting scan from: {args.directory}')
@@ -118,9 +126,11 @@ def main():
     visit_dir(
       dir_path=args.directory,
       filename=args.filename,
-      ignore_root=args.ignore_root
+      ignore_root=args.ignore_root,
+      no_multi_coverage=args.no_multi_coverage
     )
   finally:
+    global running
     running = False
     duration = time.time() - start_time
     print()
