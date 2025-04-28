@@ -98,12 +98,12 @@ def main():
 
   parser.add_argument(
     '-f', '--filename', default='all.sha1',
-    help='Checksum file (default: .myfile)'
+    help='Checksum file (default: all.sha1)'
   )
 
   parser.add_argument(
     '-i', '--ignore-root', action='store_true',
-    help='Ignore direct root coverage for deeper dirs.'
+    help='Ignore checksum in traversal root for its coverage. Will be counted as found checksum. No multi coverage report traversal will not stop on checksum in root when this option is set.'
   )
 
   parser.add_argument(
