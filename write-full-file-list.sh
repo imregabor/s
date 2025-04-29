@@ -57,7 +57,7 @@ du --apparent-size -b > "$DUF"
 
 sha1sum -b "$LOF" >> "$SOF"
 sha1sum -b "$LSR" >> "$SOF"
-sha1sum -b "$DUF" >> "$DUF"
+sha1sum -b "$DUF" >> "$SOF"
 
 
 echo
