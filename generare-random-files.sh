@@ -20,7 +20,16 @@ files_written=0
 block_size=$(( 10 * 1024 * 1024 ))
 min_block_size=$(( 32 * 1024 ))
 block_count=10
-bytes_to_write=0 # use 0 for no bound on data
+
+# when set check free space, and set file size accordingly
+fill_entire_disk=true
+reserve_space=$(( 16 * 1024 ))
+
+
+# bytes_to_write=0 # use 0 for no bound on data
+# when fill_entire_disk is set then ignored
+bytes_to_write=104857600
+# bytes_to_write=1806080
 single_file_size=$(( block_size * block_count ))
 
 human_readable_size() {
@@ -47,14 +56,38 @@ human_readable_size() {
 
 trap 'echo; echo "Interrupted after completing $files_written files, $(human_readable_size "$TOTAL")."; exit 0' INT
 
-
 while true ; do
+  echo
+  echo "[$(date)] Attempt to write next file"
 
-  if (( bytes_to_write > 0 && TOTAL + single_file_size > bytes_to_write )); then
+  if [ "$fill_entire_disk" = true ] ; then
     echo
-    echo "Already written $(human_readable_size "$TOTAL"), target $(human_readable_size "$bytes_to_write"), cannot write next file of $(human_readable_size "$single_file_size")"
+    echo "  Set file size based on free space"
+    free_space=$(df -B1 . | awk 'NR==2 {print $4}')
+    echo "    Free space: $(human_readable_size "$free_space")"
+    if (( free_space > reserve_space )); then
+      if (( single_file_size > free_space - reserve_space )); then
+        block_size="$min_block_size"
+        block_count=$(( (free_space - reserve_space) / block_size ))
+        single_file_size=$(( block_size * block_count ))
+        if (( block_count > 0 )); then
+          echo "    Adjust file size to fit; write $block_count x $(human_readable_size $block_size) blocks"
+          echo
+        else
+          echo "    No more blocks fit with minimal block size, exiting"
+          echo
+          break
+        fi
+      else
+        echo "    No need to adjust file size"
+        echo
+      fi
+    fi
+  elif (( bytes_to_write > 0 && TOTAL + single_file_size > bytes_to_write )); then
     echo
-    echo "  Adjust file size, using min block size $min_block_size ($(human_readable_size "$min_block_size"))"
+    echo "  Already written $(human_readable_size "$TOTAL"), target $(human_readable_size "$bytes_to_write"), cannot write next file of $(human_readable_size "$single_file_size")"
+    echo
+    echo "    Adjust file size, using min block size $min_block_size ($(human_readable_size "$min_block_size"))"
 
     block_size="$min_block_size"
     block_count=$(( (bytes_to_write - TOTAL) / block_size ))
@@ -79,23 +112,17 @@ while true ; do
 
   if [ -e "$FILENAME" ]; then
 
-    echo "WARNING! $FILENAME exists. Jump to next."
+    echo "  $FILENAME exists. Jump to next."
     continue
   fi
 
-  if [ -e "$CHECKSUMFILE" ]; then
-    echo "WARNING! $CHECKSUMFILE exists. Jump to next."
-    exit 1
-  fi
-
-  echo "["$(date)"] Writing $(human_readable_size "$single_file_size") random file $((files_written + 1)) (in $(human_readable_size "$block_size") blocks) to $FILENAME, checksum to $CHECKSUMFILE"
+  echo "  Writing $(human_readable_size "$single_file_size") random file $((files_written + 1)) (in $(human_readable_size "$block_size") blocks) to $FILENAME"
   echo
 
   dd if=/dev/urandom "bs=$block_size" "count=$block_count" 2> >(sed -e 's/^/    /' >&2) | \
     tee "$FILENAME" | \
     sha1sum -b | \
-    sed -e 's/-/\.\/'$FILENAME'/' | \
-    tee "$CHECKSUMFILE" >> ./all.sha1
+    sed -e 's/-/\.\/'$FILENAME'/' >> ./all.sha1
 
   echo
 
@@ -121,7 +148,11 @@ while true ; do
     TP=", throughput: $(human_readable_size "$((TOTAL / ELAPSED))")/s"
   fi
 
-  echo "    [$ELAPSED s], written $(human_readable_size "$last_bytes") in $last_elapsed_time s ($(human_readable_size "$last_bps")/s), total $(human_readable_size "$TOTAL")$TP"
+  echo "  Done writing file."
+  echo "    Elapsed time:    $ELAPSED s"
+  echo "    Last file write: $(human_readable_size "$last_bytes") in $last_elapsed_time s ($(human_readable_size "$last_bps")/s)"
+  echo "    All writes:      $(human_readable_size "$TOTAL")$TP"
+  echo
   echo
 
 
