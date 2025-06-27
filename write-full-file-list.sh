@@ -10,6 +10,7 @@ LOF="./all-${TS}.filelist"
 SOF="./all-${TS}.sha1"
 LSR="./all-${TS}.lsr"
 DUF="./all-${TS}.du"
+GRS="./all-${TS}.gitrepos"
 
 echo "Create full file list to $LOF"
 echo
@@ -55,9 +56,19 @@ done < <(cat "$LOF" | grep -a "\.sha1$")
 echo "Collect DU report"
 du --apparent-size -b > "$DUF"
 
+echo "Collect git repos into $GRS"
+
+
+find -type d -name '.git' | while read dir; do
+  remote=$(git -C "$dir" remote -v | grep '(fetch)' | sed -e 's/.fetch.$//' | sed -e 's/^origin.//')
+  echo -e "$dir\t$remote"
+done | tee -a "$GRS"
+
+
 sha1sum -b "$LOF" >> "$SOF"
 sha1sum -b "$LSR" >> "$SOF"
 sha1sum -b "$DUF" >> "$SOF"
+sha1sum -b "$GRS" >> "$SOF"
 
 
 echo
