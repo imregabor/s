@@ -21,7 +21,7 @@ block_size=$(( 10 * 1024 * 1024 ))
 min_block_size=$(( 32 * 1024 ))
 block_count=10
 
-# when set check free space, and set file size accordingly
+# when set check free space, and set file size accordinglym otherwise adhere to bytes_to_write
 fill_entire_disk=true
 reserve_space=$(( 16 * 1024 ))
 
