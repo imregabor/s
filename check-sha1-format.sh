@@ -114,6 +114,7 @@ process_checksum_file() {
 
   if grep -av '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE" > /dev/null; then
     if [ "$PRINT_FILENAME" == true ] ; then
+      log
       log "Problem(s) in file $CHECKSUMFILE:"
       PRINT_FILENAME=false
     fi
@@ -131,6 +132,7 @@ process_checksum_file() {
   dupes=$(sed -E 's|^[^ ]* .(.*)|\1|' "$CHECKSUMFILE" | sort | uniq -d)
   if [[ "$dupes" ]]; then
     if [ "$PRINT_FILENAME" == true ] ; then
+      log
       log "Problem(s) in file $CHECKSUMFILE:"
       PRINT_FILENAME=false
     fi
