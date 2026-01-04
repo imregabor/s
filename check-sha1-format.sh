@@ -38,17 +38,23 @@ usage() {
   echo
   echo "Options:"
   echo "  -h,   --help           Print this help and exit."
+  echo "  -v,   --verbose        Be verbose, print currently checked file"
   echo
   exit 1
 }
 
 TARGET=""
+VERBOSE=false
 
 # Argument parsing
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help)
       usage
+      ;;
+    -v|--verbose)
+      VERBOSE=true
+      shift
       ;;
     *)
       if [[ -z "$TARGET" ]]; then
@@ -96,7 +102,10 @@ process_checksum_file() {
 
   CT=$((CT + 1))
 
-  log "Checking file $CT$FORMAT_ERRORS_MSG$DUPES_ERRORS_MSG: $CHECKSUMFILE"
+  if [ "$VERBOSE" == true ] ; then
+    log "Checking file $CT$FORMAT_ERRORS_MSG$DUPES_ERRORS_MSG: $CHECKSUMFILE"
+  fi
+
 
   if grep -av '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE" > /dev/null; then
     FORMAT_ERROR_COUNT=$((FORMAT_ERROR_COUNT + 1))
@@ -133,8 +142,9 @@ elif [[ -d "$TARGET" ]]; then
 
   SRCDIR=$(readlink -m "$TARGET")
 
-  log "Absolute path: $SRCDIR"
-  log
+  if [ "$VERBOSE" == true ] ; then
+    log "Absolute path: $SRCDIR"
+  fi
 
   cd "$SRCDIR"
 
