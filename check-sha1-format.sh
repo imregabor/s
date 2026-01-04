@@ -104,10 +104,19 @@ process_checksum_file() {
 
   if [ "$VERBOSE" == true ] ; then
     log "Checking file $CT$FORMAT_ERRORS_MSG$DUPES_ERRORS_MSG: $CHECKSUMFILE"
+    PRINT_FILENAME=false
+  else
+    PRINT_FILENAME=true
   fi
 
 
+
+
   if grep -av '^[0-9a-z]\{40,40\} [ \*]\./' "$CHECKSUMFILE" > /dev/null; then
+    if [ "$PRINT_FILENAME" == true ] ; then
+      log "Problem(s) in file $CHECKSUMFILE:"
+      PRINT_FILENAME=false
+    fi
     FORMAT_ERROR_COUNT=$((FORMAT_ERROR_COUNT + 1))
     FORMAT_ERRORS_MSG=" ($FORMAT_ERROR_COUNT format errors so far)"
     log
@@ -121,6 +130,10 @@ process_checksum_file() {
 
   dupes=$(sed -E 's|^[^ ]* .(.*)|\1|' "$CHECKSUMFILE" | sort | uniq -d)
   if [[ "$dupes" ]]; then
+    if [ "$PRINT_FILENAME" == true ] ; then
+      log "Problem(s) in file $CHECKSUMFILE:"
+      PRINT_FILENAME=false
+    fi
     DUPES_ERROR_COUNT=$((DUPES_COUNT + 1))
     DUPES_ERRORS_MSG=" ($DUPES_ERROR_COUNT dupes errors so far)"
     log "  ** Duplicate paths problem ($DUPES_ERROR_COUNT) **"
