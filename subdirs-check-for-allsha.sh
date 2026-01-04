@@ -2,7 +2,7 @@
 
 echo
 echo
-echo "Presence of checkus file"
+echo "Verify the presence of checkus file in first level subdirectories"
 echo
 echo
 
