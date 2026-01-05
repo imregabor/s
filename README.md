@@ -59,18 +59,19 @@ Notes on checksum support
 
 ### Basic housekeeping
 
- - Checksum handling scripts support a subset (no path escaping) of valid SHA1 checksums. Make sure no
-  file containing backslash, newline or carriage return characters in their path is present:
+ - Checksum handling scripts support a subset ([no path escaping](https://www.gnu.org/software/coreutils/manual/html_node/cksum-output-modes.html))
+   of valid SHA1 checksums. Make sure no file containing backslash, newline or carriage return characters in their
+   path is present:
 
-  ```
-  LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
-  ```
+    ```
+    LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
+    ```
 
  - Check for validity of already present checksums, correct any identified mistakes
 
-   ```
-   check-sha1-format.sh <ROOTDIR>
-   ```
+    ```
+    check-sha1-format.sh <ROOTDIR>
+    ```
 
  - Check / generate new checksums without altering present ones, use
 
