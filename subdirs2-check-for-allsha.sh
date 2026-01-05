@@ -2,7 +2,7 @@
 
 echo
 echo
-echo "Verify the presence of checksum file in first level subdirectories"
+echo "Verify the presence of checksum file in second level subdirectories"
 echo
 echo
 
@@ -18,7 +18,7 @@ while read line ; do
     HASMISSING=true
   fi
   echo "$STAT $line"
-done < <( find -maxdepth 1 -mindepth 1 -type d)
+done < <( find -maxdepth 2 -mindepth 2 -type d)
 
 if "$HASMISSING" ; then
     echo
@@ -32,7 +32,7 @@ if "$HASMISSING" ; then
       echo "$line:"
       echo "  "$(du -hs "$line")
       echo
-    done < <( find -maxdepth 1 -mindepth 1 -type d)
+    done < <( find -maxdepth 2 -mindepth 2 -type d)
 fi
 
 echo
