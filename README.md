@@ -15,13 +15,18 @@ dir.) Fails if checksum or intermediate scratch file is already present.
 ### `continue-all-sha1.sh`
 
 Finish an interrupted `calc-all-sha1.sh` run / extend an already calculated `all.sha1` with freshly added files.
-Fails when bot an `all.sha1` and an intermediate scratch file `all.sha1-inprogress` are present. Wont recognize/remove
+Fails when both an `all.sha1` and an intermediate scratch file `all.sha1-inprogress` are present. Wont recognize/remove
 already present checksums (from already existing `all.sha1` / `all.sha1-inprogress` files) for files no longer present.
 
 ### `subdirs-check-for-allsha.sh`
 
 Check for the presence of `all.sha1` files in immediate subdirectories. Calculates and prints the size of directories
-where `all.sha1` is not present. Contents/coverage of the checksum file is not checked.
+where `all.sha1` is not present. Contents/coverage/overlapping coverage of the checksum file is not checked.
+
+### `subdirs-calc-sha1.sh`
+
+Invoke `calc-all-sha1.sh` in all immediate subdirectories. Already present or in-progress checksum files
+wont be touched.
 
 ### `check-sha1-format.sh`
 
@@ -35,7 +40,6 @@ LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
 
 
 
-
 Listing
 -------
 
@@ -46,3 +50,32 @@ Write various deep listings from the current directory, useful for offline metad
 When an empty file matching glob `___*___*___` is present it will be treated as `<DISK ID>`, the listings will be
 written into `./___listings___/<DISK_ID>/`
 
+
+
+Notes on checksum support
+-------------------------
+
+
+### Basic housekeeping
+
+ - Checksum handling scripts support a subset (no path escaping) of valid SHA1 checksums. Make sure no
+  file containing backslash, newline or carriage return characters in their path is present:
+
+  ```
+  LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
+  ```
+
+ - Check for validity of already present checksums, correct any identified mistakes
+
+   ```
+   check-sha1-format.sh <ROOTDIR>
+   ```
+
+ - Check / generate new checksums without altering present ones, use
+
+   - `subdirs-check-for-allsha1.sh` / `subdirs2-check-for-allsha1.sh` for quick check
+   - `subdirs-calc-sha1.sh` / `subdirs2-calc-sha1.sh` to generate missing files
+
+ - Identify checksum overlaps / gaps
+ - Identify checksum entries with missing files
+    - Consider moves / deletes
