@@ -31,8 +31,9 @@ wont be touched.
 ### `check-sha1-format.sh`
 
 Check for formatting errors and duplicated paths in a single checksum file or for `all.sha1` searched recursively from
-a directory. Note that check can flag special but valid outputs (when a referenced file name contains backslash,
-newline or carriage return characters), see source for details. To search for such offending files use
+a directory. Note that this check can flag special but [valid](https://www.gnu.org/software/coreutils/manual/html_node/cksum-output-modes.html)
+outputs (when a referenced file name contains backslash, newline or carriage return characters), see source for details.
+To search for such offending files use
 
 ```
 LC_ALL=C find \( -name '*\\*' -o -name \*$'\n'\* -o -name \*$'\r'\* \)
