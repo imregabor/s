@@ -91,11 +91,12 @@ while read line ; do
       print sum \"$BD\" rp
     }
   }" >> "$SOF_TMP"
-done < <(cat "$LOF" | grep -a "\.sha1$")
+done < <(cat "$LOF" | grep -a "\.sha1$" | grep -v "^\./___listings___/")
 
 echo "Dedup $SOF_TMP into $SOF"
 rm -f "$SOF"
-cat "$SOF_TMP" | sort -u > "$SOF"
+# see https://stackoverflow.com/questions/37514283/gnu-sort-default-buffer-size
+sort -u "$SOF_TMP" > "$SOF"
 
 echo
 echo "Collect directory DU report"
