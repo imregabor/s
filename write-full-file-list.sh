@@ -4,12 +4,15 @@
 #
 #  - List of all files
 #  - Output of recursive ls
-#  - Union of SHA1 checksums
+#  - Union of SHA1 checksums + dedup (paths rebased to PWD to keep valid)
 #  - Directory size (in bytes) report for all dirs
 #  - List of git remotes for git repos
 #
 # When an empty file matching glob ___*___*___ is present it will be treated as
 # a <DISK ID>, write the listings into ./___listings___/<DISK_ID>/
+# In this case paths in the union of SHA1 cheksums files wont be further rebased.
+# Checksums from under ./___listings___ wont be harvested regardless of the output
+# directory.
 #
 
 # TS=$(date -Iseconds)
