@@ -7,6 +7,7 @@
 #  - Union of SHA1 checksums + dedup (paths rebased to PWD to keep valid)
 #  - Directory size (in bytes) report for all dirs
 #  - List of git remotes for git repos
+#  - df of the current directory
 #  - Git repo hash / modified status of this script
 #
 # When an empty file matching glob ___*___*___ is present it will be treated as
@@ -59,6 +60,7 @@ SOF_TMP="${BASEDIR}/all-${TS}.sha1.tmp"
 SOF="${BASEDIR}/all-${TS}.sha1"
 LSR="${BASEDIR}/all-${TS}.lsr"
 DUF="${BASEDIR}/all-${TS}.du"
+DFI="${BASEDIR}/all-${TS}.df"
 GRS="${BASEDIR}/all-${TS}.gitrepos"
 GRV="${BASEDIR}/all-${TS}.script-git-repo-version"
 
@@ -70,12 +72,14 @@ echo "  All SHA1 sums:                         $SOF"
 echo "  All SHA1 sums temp file:               $SOF_TMP"
 echo "  ls -lAR --time-style=full-iso listing: $LSR"
 echo "  du report:                             $DUF"
+echo "  df info:                               $DFI"
 echo "  collection of git remotes:             $GRS"
 echo "  Repo version file:                     $GRV"
 echo "  Repo version:                          $GITHASH$GITMOD"
 echo
 
 echo "Script repo version: $GITHASH$GITMOD" > "$GRV"
+df -Ph . > "$DFI"
 
 CT=0
 while read line ; do
@@ -140,6 +144,7 @@ sha1sum -b "$LSR" >> "$SOF"
 sha1sum -b "$DUF" >> "$SOF"
 sha1sum -b "$GRS" >> "$SOF"
 sha1sum -b "$GRV" >> "$SOF"
+sha1sum -b "$DFI" >> "$SOF"
 
 
 echo
