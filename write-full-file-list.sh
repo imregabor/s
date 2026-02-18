@@ -15,6 +15,17 @@
 # directory.
 #
 
+
+# Record git repo info for this script
+SCRIPTDIR=$(dirname "$0")
+GITHASH=$(git -C "$SCRIPTDIR" rev-parse HEAD)
+GITMOD=""
+if [[ ! -z "$(git -C "$SCRIPTDIR" status -s)" ]]; then
+  GITMOD=" [MODIFIED]"
+fi
+
+
+
 # TS=$(date -Iseconds)
 TS=$(date -u +"%Y-%m-%d___%H-%M-%S")
 
@@ -48,6 +59,7 @@ SOF="${BASEDIR}/all-${TS}.sha1"
 LSR="${BASEDIR}/all-${TS}.lsr"
 DUF="${BASEDIR}/all-${TS}.du"
 GRS="${BASEDIR}/all-${TS}.gitrepos"
+GRV="${BASEDIR}/all-${TS}.script-git-repo-version"
 
 
 echo "Create full file list using base dir $BASEDIR"
@@ -58,7 +70,11 @@ echo "  All SHA1 sums temp file:               $SOF_TMP"
 echo "  ls -lAR --time-style=full-iso listing: $LSR"
 echo "  du report:                             $DUF"
 echo "  collection of git remotes:             $GRS"
+echo "  Repo version file:                     $GRV"
+echo "  Repo version:                          $GITHASH$GITMOD"
 echo
+
+echo "Script repo version: $GITHASH$GITMOD" > "$GRV"
 
 CT=0
 while read line ; do
@@ -76,6 +92,7 @@ ls -lAR --time-style=full-iso > "$LSR"
 echo "Collect already calculated sha1s into $SOF_TMP"
 
 rm -f "$SOF_TMP"
+touch "$SOF_TMP"
 
 while read line ; do
   BD=$(echo "$line" | sed -e 's/^\(.*\/\).*$/\1/')
@@ -121,6 +138,7 @@ sha1sum -b "$LOF" >> "$SOF"
 sha1sum -b "$LSR" >> "$SOF"
 sha1sum -b "$DUF" >> "$SOF"
 sha1sum -b "$GRS" >> "$SOF"
+sha1sum -b "$GRV" >> "$SOF"
 
 
 echo
