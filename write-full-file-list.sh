@@ -7,6 +7,7 @@
 #  - Union of SHA1 checksums + dedup (paths rebased to PWD to keep valid)
 #  - Directory size (in bytes) report for all dirs
 #  - List of git remotes for git repos
+#  - Git repo hash / modified status of this script
 #
 # When an empty file matching glob ___*___*___ is present it will be treated as
 # a <DISK ID>, write the listings into ./___listings___/<DISK_ID>/
