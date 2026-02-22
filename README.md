@@ -73,6 +73,13 @@ Notes on checksum support
     check-sha1-format.sh <ROOTDIR>
     ```
 
+ - Check for redundant checksum coverage
+
+     ```
+     cd <ROOTDIR>
+     find-redundant-allsha1-files.sh
+     ```
+
  - Check / generate new checksums without altering present ones, use
 
    - `subdirs-check-for-allsha1.sh` / `subdirs2-check-for-allsha1.sh` for quick check
